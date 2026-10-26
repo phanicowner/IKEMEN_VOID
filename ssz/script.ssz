@@ -1,0 +1,2220 @@
+// IKEMEN:VOID Beta 3.0 | Mikazuki The Mugenite, Anonymous, scristopher, Unbyte (SL_Zero)
+// Community: https://mugen-cheap.fandom.com/wiki/MUGEN_Cheap_Community_Wikia
+//            https://mugen.doomjoshuaboy.com/categories/cheapie-guide/
+// See CREDITS.txt
+lib cfg = "../save/config.ssz";
+
+//Load "lib/" Scripts
+lib consts = <consts.ssz>;
+lib file = <file.ssz>;
+lib m = <math.ssz>;
+lib sh = <shell.ssz>;
+lib s = <string.ssz>;
+
+//Load "lib/alpha/" Scripts
+lib lua = <alpha/lua.ssz>;
+lib mes = <alpha/mesdialog.ssz>;
+lib se = <alpha/sdlevent.ssz>;
+lib sdl = <alpha/sdlplugin.ssz>;
+
+//Load "script/ssz/" Scripts
+lib chr = "char.ssz";
+lib cmd = "command.ssz";
+lib com = "common.ssz";
+lib fnt = "font.ssz";
+lib sff = "sff.ssz";
+lib snd = "sound.ssz";
+lib vid = "video.ssz";
+
+
+public double numArg(&.lua.State L=, int re=, int argc=, int nresults)
+{
+  double num = 0.0;
+  argc++;
+  if(!L.isNumber(argc)){
+    L.pushString(''argc + "The argument is not a number.");
+    re = -1;
+    ret num;
+  }
+  num = L.toNumber(argc);
+  re = nresults;
+  ret num;
+}
+
+public bool blArg(&.lua.State L=, int re=, int argc=, int nresults)
+{
+  bool b = false;
+  argc++;
+  if(!L.isBoolean(argc)){
+    L.pushString(''argc + "The argument is not a boolean.");
+    re = -1;
+    ret b;
+  }
+  b = L.toBoolean(argc);
+  re = nresults;
+  ret b;
+}
+
+public ^char strArg(&.lua.State L=, int re=, int argc=, int nresults)
+{
+  ^char str;
+  argc++;
+  if(!L.isString(argc)){
+    L.pushString(''argc + "The argument is not a string.");
+    re = -1;
+    ret str;
+  }
+  str = L.toString(argc);
+  re = nresults;
+  ret str;
+}
+
+public ..refArg<_t>(&.lua.State L=, int re=, int argc=, int nresults) ^_t
+{
+  ^_t obj;
+  argc++;
+  ref r = L.toRef(argc);
+  r.cast(obj=);
+  if(#obj == 0){
+    L.pushString(''argc + "The argument is invalid.");
+    re = -1;
+    ret obj;
+  }
+  re = nresults;
+  ret obj;
+}
+
+public &Sff
+{
+  ^&.sff.Sff sff;
+  public ^&.sff.Sff getSff()
+  {
+    ret `sff;
+  }
+  public bool load(^/char file)
+  {
+    `sff.new(1);
+    ret #`sff~loadFile(file, false) == 0;
+  }
+}
+
+void sffNew(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^/char file = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^&.Sff sff.new(1);
+  if(!sff~load(file)){
+    L.pushString(file + "Failed to load SFF.");
+    re = -1;
+    ret;
+  }
+  L.pushRef(sff);
+}
+
+public &Snd
+{
+  ^&.snd.Snd snd;
+  public ^&.snd.Snd getSnd()
+  {
+    ret `snd;
+  }
+  public bool load(^/char file)
+  {
+    `snd.new(1);
+    ret #`snd~loadFile(file) == 0;
+  }
+  public bool play(int g, int n)
+  {
+    if(#`snd == 0) ret false;
+    ^&.snd.Sound c = .snd.getChannel(-1);
+    if(#c == 0) ret false;
+    c~sound = `snd~getSound(g, n);
+    ret #c~sound > 0;
+  }
+}
+
+void sndNew(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^/char file = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^&.Snd snd.new(1);
+  if(!snd~load(file)){
+    L.pushString(file + "Failed to load SND.");
+    re = -1;
+    ret;
+  }
+  L.pushRef(snd);
+}
+
+void sndPlay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.Snd snd = .refArg!&.Snd?(L=, re=, argc=, nret); if(re < 0) ret;
+  int g = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int n = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  snd~play(g, n);
+}
+
+void sndStop(&.lua.State L=, int re=)
+{
+  re = 0;
+  .snd.stopSound();
+}
+
+public &Font
+{
+  ^&.fnt.Font fnt;
+  public ^&.fnt.Font getFont()
+  {
+    ret `fnt;
+  }
+  public bool load(^/char file)
+  {
+    `fnt.new(1);
+    ret #`fnt~loadFile(file) == 0;
+  }
+}
+void fontNew(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^/char file = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^&.Font font.new(1);
+  if(!font~load(file)){
+    L.pushString(file + "Failed to load FNT.");
+    re = -1;
+    ret;
+  }
+  L.pushRef(font);
+}
+
+
+public &Command
+{
+  ^&.cmd.CommandList cmd;
+  new()
+  {
+    `cmd.new(1);
+    `cmd~buffer.new(1);
+  }
+  public void input(int pn)
+  {
+    if(`cmd~input(pn-1, 1)) `cmd~step(1, false, false, 0);
+  }
+  public bool getState(^/char name)
+  {
+    ^&.cmd.Command cl = `cmd~get(name);
+    loop{index i = 0; while; do:
+      if(cl[i].curbuftime > 0) ret true;
+      i++;
+    while i < #cl:}
+    ret false;
+  }
+  public void addCommand(^/char name, ^/char com, int time)
+  {
+    &.cmd.Command c;
+    c.name = name;
+    .cmd.resetReadKeymap();
+    c.readCmd(com);
+    c.time = time;
+    `cmd~add(c=);
+  }
+  public void bufReset()
+  {
+    `cmd~bufReset();
+  }
+}
+
+void commandNew(&.lua.State L=, int re=)
+{
+  re = 1;
+  ^&.Command command.new(1);
+  L.pushRef(command);
+}
+
+void commandAdd(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.Command command = .refArg!&.Command?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  ^/char name = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^/char com = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int time = 1;
+  if(L.getTop() > argc){
+    time = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  }
+  command~addCommand(name, com, time);
+}
+
+void commandGetState(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^&.Command command = .refArg!&.Command?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  ^/char name = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  L.pushBoolean(command~getState(name));
+}
+
+void commandInput(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.Command command = .refArg!&.Command?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  int pn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  command~input(pn);
+}
+
+void commandBufReset(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.Command command = .refArg!&.Command?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  command~bufReset();
+}
+
+void startButton(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  int pn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  L.pushBoolean(.cmd.startButton(pn));
+}
+
+void getSysCtrl(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  L.pushNumber((double).com.sysControls);
+}
+
+void setSysCtrl(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int v = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(.com.sysControls == v) ret;
+  .com.sysControls = v;
+}
+
+void inputThread(^/char title, ^^char str, ^bool done)
+{
+  .mes.InputStr(:title, str<>=:);
+  done<> = true;
+}
+
+public &InputDialog
+{
+  thread!.inputThread? inth;
+  ^^char str;
+  ^bool done;
+  new()
+  {
+    `str.new(1);
+    `done.new(1);
+    `done<> = true;
+  }
+  public bool popup(^/char title)
+  {
+    if(!`done<>) ret false;
+    .sdl.fullScreen(.se.full = false);
+    `done<> = false;
+    `inth..(title, `str, `done);
+    ret true;
+  }
+  public bool isDone()
+  {
+    ret `done<>;
+  }
+  public ^char getStr()
+  {
+    if(!`done<>) ret .consts.null!char?();
+    ret `str<>;
+  }
+}
+
+void inputDialogNew(&.lua.State L=, int re=)
+{
+  re = 1;
+  ^&.InputDialog inputDialog.new(1);
+  L.pushRef(inputDialog);
+}
+
+void inputDialogPopup(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.InputDialog inputDialog = .refArg!&.InputDialog?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  ^/char title = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  inputDialog~popup(title);
+}
+
+void inputDialogIsDone(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^&.InputDialog inputDialog = .refArg!&.InputDialog?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  L.pushBoolean(inputDialog~isDone());
+}
+
+void inputDialogGetStr(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^&.InputDialog inputDialog = .refArg!&.InputDialog?(L=, re=, argc=, nret);
+  if(re < 0) ret;
+  L.pushString(inputDialog~getStr());
+}
+
+public %char line;
+
+void inputText(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^/char mod = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  bool dot = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  char lastChar = .sdl.getLastChar();
+  switch(lastChar){
+    case '\0':
+    case '\x8':
+      {
+        ^char tmp = .line[0..#.line-1];
+        .line.new(0);
+        .line .= tmp;
+      }
+    default:
+      branch{
+      cond .s.equ(mod,"text"):
+        if((lastChar >= '\x20' && lastChar < '\x30') || (lastChar >= '\x3a' && lastChar < '\x7f')) .line .= lastChar;
+      cond .s.equ(mod,"num"):
+        if((lastChar >= '\x30' && lastChar < '\x3a') || (lastChar == '\x2e' && dot)) .line .= lastChar;
+      else:
+        if(lastChar >= '\x20' && lastChar < '\x7f') .line .= lastChar;
+      }
+  }
+  L.pushString(.line);
+}
+
+void setInputText(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char str = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .line.new(0);
+  .line .= str;
+}
+
+void clearInputText(&.lua.State L=, int re=)
+{
+  re = 0;
+  .line.new(0);
+}
+
+void clipboardPaste(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.paste);
+}
+
+void getClipboardText(&.lua.State L=, int re=)
+{
+  re = 1;
+  ^char str;
+  .mes.GetClipboardStr(:str=:);
+  L.pushString(str);
+}
+
+void drawTTF(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char file = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int align = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^/char text = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int x = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int y = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  float scaleX = .numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  float scaleY = .numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int r = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int g = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int b = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int alpha = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .sdl.drawTTF(file, align, text, x, y, scaleX, scaleY, r, g, b, alpha);
+}
+
+void loadVideo(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char file = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^/char capturepath = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int volume = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  int audiotrack = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //int subtitletrack = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .vid.video~play(file, capturepath, volume, audiotrack);
+}
+
+void playBGM(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char file = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .snd.bgm~play(file);
+  .com.bgmName = file; //Store BGM Name
+}
+
+void getBGM(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushString(.com.bgmName);
+}
+
+void fadeInBGM(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int time = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .sdl.fadeInBGM(time);
+}
+
+void fadeOutBGM(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int time = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .sdl.fadeOutBGM(time);
+}
+
+void sszOpen(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char filename = .strArg(L=, re=, argc=, nret); if(re < 0) ret; //Name of the file with his extension
+  ^/char dirname = .strArg(L=, re=, argc=, nret); if(re < 0) ret; //Where is the file locate IN MAIN IKEMEN FOLDER, it does not accept slash
+  .sh.open(dirname, "", filename, false, true); //Use in lua like that: sszOpen("chars", "Credits.txt") Also, set here to false false in order to open behind
+}
+
+void batOpen(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char filename = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^/char dirname = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .sh.open(dirname, "", filename, true, false);
+}
+
+void webOpen(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char filename = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .sh.open(filename, "", "", false, false);
+}
+
+void esc(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.esc);
+}
+
+void upKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.upKey);
+}
+
+void downKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.downKey);
+}
+
+void leftKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.leftKey);
+}
+
+void rightKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.rightKey);
+}
+
+void aKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.aKey);
+}
+
+void bKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.bKey);
+}
+
+void cKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.cKey);
+}
+
+void dKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.dKey);
+}
+
+void eKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.eKey);
+}
+
+void fKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.fKey);
+}
+
+void gKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.gKey);
+}
+
+void hKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.hKey);
+}
+
+void iKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.iKey);
+}
+
+void jKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.jKey);
+}
+
+void kKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kKey);
+}
+
+void lKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.lKey);
+}
+
+void mKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.mKey);
+}
+
+void nKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.nKey);
+}
+
+void oKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.oKey);
+}
+
+void pKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.pKey);
+}
+
+void qKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.qKey);
+}
+
+void rKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.rKey);
+}
+
+void sKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.sKey);
+}
+
+void tKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.tKey);
+}
+
+void uKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.uKey);
+}
+
+void vKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.vKey);
+}
+
+void wKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.wKey);
+}
+
+void xKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.xKey);
+}
+
+void yKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.yKey);
+}
+
+void zKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.zKey);
+}
+
+void kzeroKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kzeroKey);
+}
+
+void koneKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.koneKey);
+}
+
+void ktwoKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.ktwoKey);
+}
+
+void kthreeKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kthreeKey);
+}
+
+void kfourKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kfourKey);
+}
+
+void kfiveKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kfiveKey);
+}
+
+void ksixKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.ksixKey);
+}
+
+void ksevenKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.ksevenKey);
+}
+
+void keightKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.keightKey);
+}
+
+void knineKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.knineKey);
+}
+
+void zeroKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.zeroKey);
+}
+
+void oneKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.oneKey);
+}
+
+void twoKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.twoKey);
+}
+
+void threeKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.threeKey);
+}
+
+void fourKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.fourKey);
+}
+
+void fiveKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.fiveKey);
+}
+
+void sixKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.sixKey);
+}
+
+void sevenKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.sevenKey);
+}
+
+void eightKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.eightKey);
+}
+
+void nineKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.nineKey);
+}
+
+void returnKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.returnKey);
+}
+
+void backspaceKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.backspaceKey);
+}
+
+void spaceKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.spaceKey);
+}
+
+void lshiftKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.lshiftKey);
+}
+
+void rshiftKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.rshiftKey);
+}
+
+void tabKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.tabKey);
+}
+
+void minusKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.minusKey);
+}
+
+void equalsKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.equalsKey);
+}
+
+void leftbracketKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.leftbracketKey);
+}
+
+void rightbracketKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.rightbracketKey);
+}
+
+void backslashKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.backslashKey);
+}
+
+void semicolonKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.semicolonKey);
+}
+
+void commaKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.commaKey);
+}
+
+void periodKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.periodKey);
+}
+
+void slashKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.slashKey);
+}
+
+void f1Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f1Key);
+}
+
+void f2Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f2Key);
+}
+
+void f3Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f3Key);
+}
+
+void f4Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f4Key);
+}
+
+void f5Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f5Key);
+}
+
+void f9Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f9Key);
+}
+
+void f10Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f10Key);
+}
+
+void f11Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f11Key);
+}
+
+void f12Key(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.f12Key);
+}
+
+void printscreenKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.printscreenKey);
+}
+
+void insertKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.insertKey);
+}
+
+void homeKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.homeKey);
+}
+
+void pageupKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.pageupKey);
+}
+
+void deleteKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.deleteKey);
+}
+
+void endKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.endKey);
+}
+
+void pagedownKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.pagedownKey);
+}
+
+void kdivideKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kdivideKey);
+}
+
+void kmultiplyKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kmultiplyKey);
+}
+
+void kminusKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kminusKey);
+}
+
+void kplusKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kplusKey);
+}
+
+void kenterKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kenterKey);
+}
+
+void kperiodKey(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.kperiodKey);
+}
+
+//void nonushashKey(&.lua.State L=, int re=)
+//{
+  //re = 1;
+  //L.pushBoolean(.se.nonushashKey);
+//}
+
+//void apostropheKey(&.lua.State L=, int re=)
+//{
+  //re = 1;
+  //L.pushBoolean(.se.apostropheKey);
+//}
+
+//void graveKey(&.lua.State L=, int re=)
+//{
+  //re = 1;
+  //L.pushBoolean(.se.graveKey);
+//}
+
+void getGamepadKeyA(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.getGamepadKeyA);
+}
+
+void getGamepadKeyB(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.getGamepadKeyB);
+}
+
+void getGamepadKeyC(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.se.getGamepadKeyC);
+}
+
+void sszRandom(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).m.random());
+}
+
+void setAutoguard(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(!.m.inRange!int?(1, #.com.autoguard, pn)){
+    L.pushString("Invalid player number.");
+    re = -1;
+    ret;
+  }
+  bool ag = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.autoguard[pn-1] = ag;
+}
+
+void setPowerShare(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(!.m.inRange!int?(1, #.com.powerShare, pn)){
+    L.pushString("Invalid team number.");
+    re = -1;
+    ret;
+  }
+  bool ps = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.powerShare[pn-1] = ps;
+}
+
+void setCredits(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int cd = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.credits = cd;
+}
+
+void getCredits(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.credits);
+}
+
+void setCoins(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int cs = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.coins = cs;
+}
+
+void getCoins(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.coins);
+}
+
+void setRoundTime(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int rt = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.roundTime = rt * 60;
+}
+
+void getRoundTime(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.roundTime);
+}
+
+void setRoundsToWin(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int rtw = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.roundsToWin = rtw;
+}
+
+void getRoundsToWin(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.roundsToWin);
+}
+
+void p1RoundsWon(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.p1wins);
+}
+
+void p2RoundsWon(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.p2wins);
+}
+
+void setHomeTeam(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int tn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(!.m.inRange!int?(1, 2, tn)){
+    L.pushString("Invalid team number.");
+    re = -1;
+    ret;
+  }
+  .com.home = tn - 1;
+}
+
+void setP1winsDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool p1wd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p1winsDisplay = p1wd;
+}
+
+void p1winsDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.p1winsDisplay);
+}
+
+void setP2winsDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool p2wd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p2winsDisplay = p2wd;
+}
+
+void p2winsDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.p2winsDisplay);
+}
+
+void setP1winsFormatted(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char p1wf = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p1winsFormatted = p1wf;
+}
+
+void setP2winsFormatted(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char p2wf = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p2winsFormatted = p2wf;
+}
+
+void setP1matchWins(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int p1mw = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p1matchWins = p1mw;
+}
+
+void getP1matchWins(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.p1matchWins);
+}
+
+void setP2matchWins(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int p2mw = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p2matchWins = p2mw;
+}
+
+void getP2matchWins(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.p2matchWins);
+}
+
+void setTimerDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool td = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.timerDisplay = td;
+}
+
+void timerDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.timerDisplay);
+}
+
+void setTimerFormatted(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char tf = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.timerFormatted = tf;
+}
+
+void setTimer(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int st = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.timer = st;
+}
+
+void timerTotal(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.timer);
+}
+
+void setCountdownDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool cd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.countdownDisplay = cd;
+}
+
+void countdownDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.countdownDisplay);
+}
+
+void setCountdownFormatted(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char cf = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.countdownFormatted = cf;
+}
+
+void setCountdown(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int ct = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.countdownTimer = ct;
+}
+
+void countdown(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.countdownTimer);
+}
+
+void setScoreDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool sd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.scoreDisplay = sd;
+}
+
+void scoreDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.scoreDisplay);
+}
+
+void setScore(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int sa = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.score = sa;
+}
+
+void score(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.score);
+}
+
+void setScoreTotal(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int st = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.scoreTotal = st;
+}
+
+void scoreTotal(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.scoreTotal);
+}
+
+void setP1Score(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int sa = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p1score = sa;
+}
+
+void p1score(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.p1score);
+}
+
+void setP2Score(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int sa = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.p2score = sa;
+}
+
+void p2score(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.p2score);
+}
+
+void setMatchnoDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool mnd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.matchnoDisplay = mnd;
+}
+
+void matchnoDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.matchnoDisplay);
+}
+
+void setMatchInfo(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char mf = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.matchnoInfo = mf;
+}
+
+void setMatchNo(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int mn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.match = mn;
+}
+
+void getMatchNo(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.match);
+}
+
+void setLastMatch(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int lm = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.lastMatch = lm;
+}
+
+void getLastMatch(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.lastMatch);
+}
+
+void setAilevelDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool ald = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.ailevelDisplay = ald;
+}
+
+void ailevelDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.ailevelDisplay);
+}
+
+void setCPULevel(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int cl = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.cpuLevel = cl;
+}
+
+void cpuLevel(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.cpuLevel);
+}
+
+void setGameModeDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool gmd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.gamemodeDisplay = gmd;
+}
+
+void gamemodeDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.gamemodeDisplay);
+}
+
+void setRewardFormatted(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char rf = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.rewardFormatted = rf;
+}
+
+void setRewardDisplay(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool rd = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.rewardDisplay = rd;
+}
+
+void rewardDisplay(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.rewardDisplay);
+}
+
+void setTourneyState(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char ts = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.tourneyState = ts;
+}
+
+void getTourneyState(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushString(.com.tourneyState);
+}
+
+void setFTNo(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int fn = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.matchsToWin = fn;
+}
+
+void getFTNo(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.matchsToWin);
+}
+
+void setFirstAttackCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int fac = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.firstAttackCount = fac;
+}
+
+void firstAttackCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.firstAttackCount);
+}
+
+void setConsecutiveWins(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int cw = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.consecutiveWins = cw;
+}
+
+void consecutiveWins(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.consecutiveWins);
+}
+
+void setWinTimeCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wtc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winTimeCount = wtc;
+}
+
+void winTimeCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winTimeCount);
+}
+
+void setWinPerfectCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wpc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winPerfectCount = wpc;
+}
+
+void winPerfectCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winPerfectCount);
+}
+
+void setWinSpecialCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wsc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winSpecialCount = wsc;
+}
+
+void winSpecialCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winSpecialCount);
+}
+
+void setWinPerfectSpecialCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wpsc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winPerfectSpecialCount = wpsc;
+}
+
+void winPerfectSpecialCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winPerfectSpecialCount);
+}
+
+void setWinHyperCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int whc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winHyperCount = whc;
+}
+
+void winHyperCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winHyperCount);
+}
+
+void setWinPerfectHyperCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wphc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winPerfectHyperCount = wphc;
+}
+
+void winPerfectHyperCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winPerfectHyperCount);
+}
+
+void setWinThrowCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wtc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winThrowCount = wtc;
+}
+
+void winThrowCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winThrowCount);
+}
+
+void setWinPerfectThrowCount(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int wptc = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.winPerfectThrowCount = wptc;
+}
+
+void winPerfectThrowCount(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.winPerfectThrowCount);
+}
+
+void setPersistLife(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool lp = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.persistLife = lp;
+}
+
+void persistLife(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.persistLife);
+}
+
+void setLifePersistence(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int lp = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.lifePersistence = lp;
+}
+
+void getLifePersistence(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.lifePersistence);
+}
+
+void setPersistPower(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool pp = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.persistPower = pp;
+}
+
+void persistPower(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.persistPower);
+}
+
+void setPowerPersistence(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pp = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.powerPersistence = pp;
+}
+
+void getPowerPersistence(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.powerPersistence);
+}
+
+void setPersistRoundTime(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  bool rtp = .blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.persistRoundtime = rtp;
+}
+
+void persistRoundtime(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushBoolean(.com.persistRoundtime);
+}
+
+void setTimePersistence(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int tp = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.timePersistence = tp;
+}
+
+void getTimePersistence(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.timePersistence);
+}
+
+void setAbyssDepth(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int ad = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssDepth = ad;
+}
+
+void getAbyssDepth(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.abyssDepth);
+}
+
+void setAbyssDepthBoss(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int adb = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssDepthBoss = adb;
+}
+
+void getAbyssDepthBoss(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.abyssDepthBoss);
+}
+
+void setAbyssDepthBossSpecial(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int adbs = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssDepthBossSpecial = adbs;
+}
+
+void getAbyssDepthBossSpecial(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.abyssDepthBossSpecial);
+}
+
+void setAbyssBossFight(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int adbf = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssBossFight = adbf;
+}
+
+void getAbyssBossFight(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.abyssBossFight);
+}
+
+void setAbyssFinalDepth(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int afd = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssFinalDepth = afd;
+}
+
+void getAbyssFinalDepth(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.abyssFinalDepth);
+}
+
+void setPlayerReward(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pr = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.playerReward = pr;
+}
+
+void getPlayerReward(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.playerReward);
+}
+
+void setPlayerLife(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pl = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.playerLife = pl;
+}
+
+void getPlayerLife(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.playerLife);
+}
+
+void setPlayerPower(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pp = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.playerPower = pp;
+}
+
+void getPlayerPower(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.playerPower);
+}
+
+void setPlayerAttack(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pa = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.playerAttack = pa;
+}
+
+void getPlayerAttack(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.playerAttack);
+}
+
+void setPlayerDefence(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int pd = (int).numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.playerDefence = pd;
+}
+
+void getPlayerDefence(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushNumber((double).com.playerDefence);
+}
+
+void setAbyssSP1(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char asp1 = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssSP1 = asp1;
+}
+
+void getAbyssSP1(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushString(.com.abyssSP1);
+}
+
+void setAbyssSP2(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char asp2 = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssSP2 = asp2;
+}
+
+void getAbyssSP2(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushString(.com.abyssSP2);
+}
+
+void setAbyssSP3(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char asp3 = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssSP3 = asp3;
+}
+
+void getAbyssSP3(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushString(.com.abyssSP3);
+}
+
+void setAbyssSP4(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char asp4 = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  .com.abyssSP4 = asp4;
+}
+
+void getAbyssSP4(&.lua.State L=, int re=)
+{
+  re = 1;
+  L.pushString(.com.abyssSP4);
+}
+
+void exitMatch(&.lua.State L=, int re=)
+{
+  re = 0;
+  .com.exitMatch = true;
+}
+
+void setSharedString(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char str = .strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  branch{
+  cond .s.equ(str, "end"):
+    .se.end = true;
+  cond .s.equ(str, "reload"):
+    .chr.chars.new(#.chr.chars);
+  }
+}
+
+//void debugKey(&.lua.State L=, int re=)
+//{
+//  .se.debugkey = true;
+//}
+
+public void init(&.lua.State L=)
+{
+  L.register("sffNew", .sffNew);
+  L.register("sndNew", .sndNew);
+  L.register("sndPlay", .sndPlay);
+  L.register("sndStop", .sndStop);
+  L.register("fontNew", .fontNew);
+  L.register("commandNew", .commandNew);
+  L.register("commandAdd", .commandAdd);
+  L.register("commandGetState", .commandGetState);
+  L.register("commandInput", .commandInput);
+  L.register("commandBufReset", .commandBufReset);
+  L.register("startButton", .startButton);
+  L.register("getSysCtrl", .getSysCtrl);
+  L.register("setSysCtrl", .setSysCtrl);
+  L.register("inputDialogNew", .inputDialogNew);
+  L.register("inputDialogPopup", .inputDialogPopup);
+  L.register("inputDialogIsDone", .inputDialogIsDone);
+  L.register("inputDialogGetStr", .inputDialogGetStr);
+  L.register("inputText", .inputText);
+  L.register("setInputText", .setInputText);
+  L.register("clearInputText", .clearInputText);
+  L.register("clipboardPaste", .clipboardPaste);
+  L.register("getClipboardText", .getClipboardText);
+  L.register("playBGM", .playBGM);
+  L.register("getBGM", .getBGM);
+  L.register("fadeInBGM", .fadeInBGM);
+  L.register("fadeOutBGM", .fadeOutBGM);
+  L.register("loadVideo", .loadVideo);
+  L.register("drawTTF", .drawTTF);
+  L.register("sszOpen", .sszOpen);
+  L.register("batOpen", .batOpen);
+  L.register("webOpen", .webOpen);
+  L.register("esc", .esc);
+  L.register("upKey", .upKey);
+  L.register("downKey", .downKey);
+  L.register("leftKey", .leftKey);
+  L.register("rightKey", .rightKey);
+  L.register("aKey", .aKey);
+  L.register("bKey", .bKey);
+  L.register("cKey", .cKey);
+  L.register("dKey", .dKey);
+  L.register("eKey", .eKey);
+  L.register("fKey", .fKey);
+  L.register("gKey", .gKey);
+  L.register("hKey", .hKey);
+  L.register("iKey", .iKey);
+  L.register("jKey", .jKey);
+  L.register("kKey", .kKey);
+  L.register("lKey", .lKey);
+  L.register("mKey", .mKey);
+  L.register("nKey", .nKey);
+  L.register("oKey", .oKey);
+  L.register("pKey", .pKey);
+  L.register("qKey", .qKey);
+  L.register("rKey", .rKey);
+  L.register("sKey", .sKey);
+  L.register("tKey", .tKey);
+  L.register("uKey", .uKey);
+  L.register("vKey", .vKey);
+  L.register("wKey", .wKey);
+  L.register("xKey", .xKey);
+  L.register("yKey", .yKey);
+  L.register("zKey", .zKey);
+  L.register("kzeroKey", .kzeroKey);
+  L.register("koneKey", .koneKey);
+  L.register("ktwoKey", .ktwoKey);
+  L.register("kthreeKey", .kthreeKey);
+  L.register("kfourKey", .kfourKey);
+  L.register("kfiveKey", .kfiveKey);
+  L.register("ksixKey", .ksixKey);
+  L.register("ksevenKey", .ksevenKey);
+  L.register("keightKey", .keightKey);
+  L.register("knineKey", .knineKey);
+  L.register("zeroKey", .zeroKey);
+  L.register("oneKey", .oneKey);
+  L.register("twoKey", .twoKey);
+  L.register("threeKey", .threeKey);
+  L.register("fourKey", .fourKey);
+  L.register("fiveKey", .fiveKey);
+  L.register("sixKey", .sixKey);
+  L.register("sevenKey", .sevenKey);
+  L.register("eightKey", .eightKey);
+  L.register("nineKey", .nineKey);
+  L.register("returnKey", .returnKey);
+  L.register("backspaceKey", .backspaceKey);
+  L.register("spaceKey", .spaceKey);
+  L.register("lshiftKey", .lshiftKey);
+  L.register("rshiftKey", .rshiftKey);
+  L.register("tabKey", .tabKey);
+  L.register("minusKey", .minusKey);
+  L.register("equalsKey", .equalsKey);
+  L.register("leftbracketKey", .leftbracketKey);
+  L.register("rightbracketKey", .rightbracketKey);
+  L.register("backslashKey", .backslashKey);
+  L.register("semicolonKey", .semicolonKey);
+  L.register("commaKey", .commaKey);
+  L.register("periodKey", .periodKey);
+  L.register("slashKey", .slashKey);
+  L.register("f1Key", .f1Key);
+  L.register("f2Key", .f2Key);
+  L.register("f3Key", .f3Key);
+  L.register("f4Key", .f4Key);
+  L.register("f5Key", .f5Key);
+  L.register("f9Key", .f9Key);
+  L.register("f10Key", .f10Key);
+  L.register("f11Key", .f11Key);
+  L.register("f12Key", .f12Key);
+  L.register("printscreenKey", .printscreenKey);
+  L.register("insertKey", .insertKey);
+  L.register("homeKey", .homeKey);
+  L.register("pageupKey", .pageupKey);
+  L.register("deleteKey", .deleteKey);
+  L.register("endKey", .endKey);
+  L.register("pagedownKey", .pagedownKey);
+  L.register("kdivideKey", .kdivideKey);
+  L.register("kmultiplyKey", .kmultiplyKey);
+  L.register("kminusKey", .kminusKey);
+  L.register("kplusKey", .kplusKey);
+  L.register("kenterKey", .kenterKey);
+  L.register("kperiodKey", .kperiodKey);
+  //L.register("nonushashKey", .nonushashKey);
+  //L.register("apostropheKey", .apostropheKey);
+  //L.register("graveKey", .graveKey);
+  L.register("getGamepadKeyA", .getGamepadKeyA);
+  L.register("getGamepadKeyB", .getGamepadKeyB);
+  L.register("getGamepadKeyC", .getGamepadKeyC);
+  L.register("sszRandom", .sszRandom);
+  L.register("setAutoguard", .setAutoguard);
+  L.register("setPowerShare", .setPowerShare);
+  L.register("setHomeTeam", .setHomeTeam);
+  
+  L.register("setCoins", .setCoins);
+  L.register("getCoins", .getCoins);
+  
+  L.register("setCredits", .setCredits);
+  L.register("getCredits", .getCredits);
+  
+  L.register("setRoundTime", .setRoundTime);
+  L.register("getRoundTime", .getRoundTime);
+  
+  L.register("setRoundsToWin", .setRoundsToWin);
+  L.register("getRoundsToWin", .getRoundsToWin);
+  
+  L.register("p1RoundsWon", .p1RoundsWon);
+  L.register("p2RoundsWon", .p2RoundsWon);
+  
+  L.register("setP1winsDisplay", .setP1winsDisplay);
+  L.register("setP2winsDisplay", .setP2winsDisplay);
+  
+  L.register("p1winsDisplay", .p1winsDisplay);
+  L.register("p2winsDisplay", .p2winsDisplay);
+  
+  L.register("setP1winsFormatted", .setP1winsFormatted);
+  L.register("setP2winsFormatted", .setP2winsFormatted);
+  
+  L.register("setP1matchWins", .setP1matchWins);
+  L.register("getP1matchWins", .getP1matchWins);
+  L.register("setP2matchWins", .setP2matchWins);
+  L.register("getP2matchWins", .getP2matchWins);
+  
+  L.register("setTimerFormatted", .setTimerFormatted);
+  L.register("setTimerDisplay", .setTimerDisplay);
+  L.register("timerDisplay", .timerDisplay);
+
+  L.register("setTimer", .setTimer);
+  L.register("timerTotal", .timerTotal);
+
+  L.register("setCountdownFormatted", .setCountdownFormatted);
+  L.register("setCountdownDisplay", .setCountdownDisplay);
+  L.register("countdownDisplay", .countdownDisplay);
+  
+  L.register("setCountdown", .setCountdown);
+  L.register("countdown", .countdown);
+  
+  L.register("setScoreDisplay", .setScoreDisplay);
+  L.register("scoreDisplay", .scoreDisplay);
+  
+  L.register("setScore", .setScore);
+  L.register("score", .score);
+  
+  L.register("setScoreTotal", .setScoreTotal);
+  L.register("scoreTotal", .scoreTotal);
+  
+  L.register("setP1Score", .setP1Score);
+  L.register("setP2Score", .setP2Score);
+  L.register("p1score", .p1score);
+  L.register("p2score", .p2score);
+
+  L.register("setMatchInfo", .setMatchInfo);
+  L.register("setMatchnoDisplay", .setMatchnoDisplay);
+  L.register("matchnoDisplay", .matchnoDisplay);
+  
+  L.register("setMatchNo", .setMatchNo);
+  L.register("getMatchNo", .getMatchNo);
+  
+  L.register("setLastMatch", .setLastMatch);
+  L.register("getLastMatch", .getLastMatch);
+
+  L.register("setAilevelDisplay", .setAilevelDisplay);
+  L.register("ailevelDisplay", .ailevelDisplay);
+  
+  L.register("setCPULevel", .setCPULevel);
+  L.register("cpuLevel", .cpuLevel);
+  
+  L.register("setGameModeDisplay", .setGameModeDisplay);
+  L.register("gamemodeDisplay", .gamemodeDisplay);
+  
+  L.register("setRewardFormatted", .setRewardFormatted);
+  L.register("setRewardDisplay", .setRewardDisplay);
+  L.register("rewardDisplay", .rewardDisplay);
+  
+  L.register("setTourneyState", .setTourneyState);
+  L.register("getTourneyState", .getTourneyState);
+  
+  L.register("setFTNo", .setFTNo);
+  L.register("getFTNo", .getFTNo);
+  
+  L.register("setFirstAttackCount", .setFirstAttackCount);
+  L.register("firstAttackCount", .firstAttackCount);
+  
+  L.register("setConsecutiveWins", .setConsecutiveWins);
+  L.register("consecutiveWins", .consecutiveWins);
+  
+  L.register("setWinTimeCount", .setWinTimeCount);
+  L.register("winTimeCount", .winTimeCount);
+  
+  L.register("setWinPerfectCount", .setWinPerfectCount);
+  L.register("winPerfectCount", .winPerfectCount);
+  
+  L.register("setWinSpecialCount", .setWinSpecialCount);
+  L.register("winSpecialCount", .winSpecialCount);
+  
+  L.register("setWinPerfectSpecialCount", .setWinPerfectSpecialCount);
+  L.register("winPerfectSpecialCount", .winPerfectSpecialCount);
+  
+  L.register("setWinHyperCount", .setWinHyperCount);
+  L.register("winHyperCount", .winHyperCount);
+  
+  L.register("setWinPerfectHyperCount", .setWinPerfectHyperCount);
+  L.register("winPerfectHyperCount", .winPerfectHyperCount);
+  
+  L.register("setWinThrowCount", .setWinThrowCount);
+  L.register("winThrowCount", .winThrowCount);
+  
+  L.register("setWinPerfectThrowCount", .setWinPerfectThrowCount);
+  L.register("winPerfectThrowCount", .winPerfectThrowCount);
+  
+  L.register("setPersistLife", .setPersistLife);
+  L.register("persistLife", .persistLife);
+  
+  L.register("setLifePersistence", .setLifePersistence);
+  L.register("getLifePersistence", .getLifePersistence);
+  
+  L.register("setPersistPower", .setPersistPower);
+  L.register("persistPower", .persistPower);
+  
+  L.register("setPowerPersistence", .setPowerPersistence);
+  L.register("getPowerPersistence", .getPowerPersistence);
+  
+  L.register("setPersistRoundTime", .setPersistRoundTime);
+  L.register("persistRoundtime", .persistRoundtime);
+  
+  L.register("setTimePersistence", .setTimePersistence);
+  L.register("getTimePersistence", .getTimePersistence);
+  
+  L.register("setPlayerLife", .setPlayerLife);
+  L.register("getPlayerLife", .getPlayerLife);
+  
+  L.register("setPlayerPower", .setPlayerPower);
+  L.register("getPlayerPower", .getPlayerPower);
+  
+  L.register("setPlayerAttack", .setPlayerAttack);
+  L.register("getPlayerAttack", .getPlayerAttack);
+  
+  L.register("setPlayerDefence", .setPlayerDefence);
+  L.register("getPlayerDefence", .getPlayerDefence);
+  
+  L.register("setPlayerReward", .setPlayerReward);
+  L.register("getPlayerReward", .getPlayerReward);
+  
+  L.register("setAbyssDepth", .setAbyssDepth);
+  L.register("getAbyssDepth", .getAbyssDepth);
+  
+  L.register("setAbyssDepthBoss", .setAbyssDepthBoss);
+  L.register("getAbyssDepthBoss", .getAbyssDepthBoss);
+  
+  L.register("setAbyssDepthBossSpecial", .setAbyssDepthBossSpecial);
+  L.register("getAbyssDepthBossSpecial", .getAbyssDepthBossSpecial);
+  
+  L.register("setAbyssBossFight", .setAbyssBossFight);
+  L.register("getAbyssBossFight", .getAbyssBossFight);
+  
+  L.register("setAbyssFinalDepth", .setAbyssFinalDepth);
+  L.register("getAbyssFinalDepth", .getAbyssFinalDepth);
+  
+  L.register("setAbyssSP1", .setAbyssSP1);
+  L.register("getAbyssSP1", .getAbyssSP1);
+  L.register("setAbyssSP2", .setAbyssSP2);
+  L.register("getAbyssSP2", .getAbyssSP2);
+  L.register("setAbyssSP3", .setAbyssSP3);
+  L.register("getAbyssSP3", .getAbyssSP3);
+  L.register("setAbyssSP4", .setAbyssSP4);
+  L.register("getAbyssSP4", .getAbyssSP4);
+  
+  L.register("exitMatch", .exitMatch);
+  L.register("setSharedString", .setSharedString);
+  //L.register("debugKey", .debugKey);
+}

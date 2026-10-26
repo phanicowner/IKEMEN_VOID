@@ -1,0 +1,791 @@
+// IKEMEN:VOID Beta 3.0 | Mikazuki The Mugenite, Anonymous, scristopher, Unbyte (SL_Zero)
+// Community: https://mugen-cheap.fandom.com/wiki/MUGEN_Cheap_Community_Wikia
+//            https://mugen.doomjoshuaboy.com/categories/cheapie-guide/
+// See CREDITS.txt
+lib cfg = "../save/config.ssz";
+
+//Load "lib/" Scripts
+lib al = <alert.ssz>;
+lib file = <file.ssz>;
+lib m = <math.ssz>;
+lib s = <string.ssz>;
+
+//Load "lib/alpha/" Scripts
+
+
+//Load "script/ssz/" Scripts
+lib act = "action.ssz";
+lib com = "common.ssz";
+lib fgt = "fight.ssz";
+lib sff = "sff.ssz";
+
+
+public &Select
+{
+  public &Char
+  {
+    public ^/char def;
+    public ^/char name;
+    public ^/char sprite;
+	public ^/char anim;
+    public ^&.sff.Sprite facePortrait;
+    public ^&.sff.Sprite bigPortrait;
+	public ^&.sff.Sprite orderPortrait;
+	public ^&.sff.Sprite vsPortrait;
+    public ^&.sff.Sprite winPortrait;
+	public ^&.sff.Sprite loserPortrait;
+	public ^&.sff.Sprite resultPortrait;
+	public ^&.sff.Sprite extraPortrait;
+    public int metaReady = 0;
+    public int faceTried = 0;
+    public int bigTried = 0;
+    public int empty = 0;
+    public int baked = 0;
+  }
+  public &Stage
+  {
+    public ^/char def;
+    public ^/char name;
+	public ^/char sprite;
+	public ^/char anim;
+	public ^&.sff.Sprite iconStagePortrait;
+	public ^&.sff.Sprite bigStagePortrait;
+	public ^&.sff.Sprite vsStagePortrait;
+	public ^&.sff.Sprite winStagePortrait;
+	public ^&.sff.Sprite extraStagePortrait;
+    public int metaReady = 0;
+    public int faceTried = 0;
+    public int bigTried = 0;
+  }
+  public int columns = 5, rows = 2;
+  public float cellsizex = 29.0, cellsizey = 29.0;
+  public float cellscalex = 1.0, cellscaley = 1.0;
+  
+  public int faceGroup = .cfg.CharPortraitsGroup, faceIndex = .cfg.CharFacePortraitIndex;
+  public int bigGroup = .cfg.CharPortraitsGroup, bigIndex = .cfg.CharBigPortraitIndex;
+  public int winGroup = .cfg.CharPortraitsGroup, winIndex = .cfg.CharWinnerPortraitIndex;
+  public int loserGroup = .cfg.CharPortraitsGroup, loserIndex = .cfg.CharLoserPortraitIndex;
+  public int orderGroup = .cfg.CharPortraitsGroup, orderIndex = .cfg.CharOrderPortraitIndex;
+  public int vsGroup = .cfg.CharPortraitsGroup, vsIndex = .cfg.CharVSPortraitIndex;
+  public int resultGroup = .cfg.CharPortraitsGroup, resultIndex = .cfg.CharResultsPortraitIndex;
+  public int extraGroup = .cfg.CharPortraitsGroup, extraIndex = .cfg.CharExtraPortraitIndex;
+  
+  public int IconStageGroup = .cfg.StagePortraitsGroup, IconStageIndex = .cfg.StageIconPortraitIndex;
+  public int bigStageGroup = .cfg.StagePortraitsGroup, bigStageIndex = .cfg.StageBigPortraitIndex;
+  public int vsStageGroup = .cfg.StagePortraitsGroup, vsStageIndex = .cfg.StageVSPortraitIndex;
+  public int winStageGroup = .cfg.StagePortraitsGroup, winStageIndex = .cfg.StageWinPortraitIndex;
+  public int extraStageGroup = .cfg.StagePortraitsGroup, extraStageIndex = .cfg.StageExtraPortraitIndex;
+  
+  public ^&.sff.Sprite randomspr;
+  public float randxscl = 1.0, randyscl = 1.0;
+  public int faceBudget = 8;
+  public index fillNo = 0;
+  public index stageFillNo = 0;
+  // VOID tile-map grid (MUGEN way): cell.bg sprite + last drawn viewport.
+  public ^&.sff.Sprite cellbgspr;
+  public float cellbgxscl = 1.0, cellbgyscl = 1.0;
+  public int showEmpty = 0;
+  public int vc0 = 0, vr0 = 0, vc1 = -1, vr1 = -1, vcols = 0, voff = 0;
+  // VOID tile-map mosaic: the whole select grid baked into ONE 8-bit texture.
+  // Each portrait is decoded once, scaled into its cell, then its own texture
+  // is dropped. Per frame the grid is a single draw call (old-school blit).
+  public ^ubyte gridPx;
+  public ^uint gridPal;
+  public ^&.sff.Sprite gridSpr;
+  public ^&.sff.Sprite tileBg;
+  public ^&.sff.Sprite tileRnd;
+  public int gridW = 0, gridH = 0, gridK = 1, gridCols = 0, gridRows = 0, gridOff = 0;
+  public int gridTilesVer = 0, gridBuiltVer = -1, gridNext = 0, gridBaked = 0;
+  public float gridStepX = 0.0, gridStepY = 0.0;
+  public float tileBgSX = 1.0, tileBgSY = 1.0, tileRndSX = 1.0, tileRndSY = 1.0;
+  public float gridPOX = 0.0, gridPOY = 0.0;
+  public bool gridDirty = false;
+  public int gridUpWait = 0;
+  // VOID portrait LRU: keep the last few decoded big portraits so moving the
+  // cursor back onto a recent character is instant (no re-decode from the SFF).
+  public ^int bigLru;
+  public int bigLruCap = 5;
+  public int bigLruHead = 0;
+  public int bigLruCount = 0;
+  public %&Char charlist;
+  public %&Stage stagelist;
+  public index curStageNo = 0, selectedStageNo = -1;
+  public ubyte quant(int c)
+  {
+    int r = c / 65536;
+    int g = (c / 256) % 256;
+    int b = c % 256;
+    int q = 16 + (r*6/256)*36 + (g*6/256)*6 + (b*6/256);
+    ret (ubyte)q;
+  }
+  public void buildGridPal()
+  {
+    `gridPal.new(256);
+    loop{int i = 0; while; do:
+      `gridPal[(index)i] = (uint)0;
+      i++;
+    while i < 256:}
+    loop{int r = 0; while; do:
+      loop{int g = 0; while; do:
+        loop{int b = 0; while; do:
+          `gridPal[(index)(16 + r*36 + g*6 + b)] = (uint)((r*51)*65536 + (g*51)*256 + b*51);
+          b++;
+        while b < 6:}
+        g++;
+      while g < 6:}
+      r++;
+    while r < 6:}
+  }
+  // Scale an 8-bit sprite (needs cpuPx) into the mosaic. dx0/dy0 = sprite
+  // position in mosaic pixels, sx/sy = sprite pixel -> mosaic pixel scale.
+  public void blitSprite(^&.sff.Sprite s, float dx0, float dy0, float sx, float sy)
+  {
+    if(#s == 0) ret;
+    if(#s~cpuPx == 0) ret;
+    if(#s~colorPallet < 256) ret;
+    int sw = s~rct.w;
+    int sh = s~rct.h;
+    if(sw <= 0 || sh <= 0) ret;
+    if(sx <= 0.0 || sy <= 0.0) ret;
+    if(#s~cpuPx < (index)(sw*sh)) ret;
+    int dw = (int)((float)sw * sx + 0.5);
+    int dh = (int)((float)sh * sy + 0.5);
+    if(dw < 1) dw = 1;
+    if(dh < 1) dh = 1;
+    int ox = (int)(dx0 - (float)s~rct.x * sx);
+    int oy = (int)(dy0 - (float)s~rct.y * sy);
+    loop{
+      int y = 0;
+      int x, tx, ty, gx, gy, ci;
+      ubyte p;
+      while;
+    do:
+      gy = oy + y;
+      if(gy >= 0 && gy < `gridH){
+        ty = (int)((float)y / sy);
+        if(ty >= sh) ty = sh - 1;
+        loop{x = 0; while; do:
+          gx = ox + x;
+          if(gx >= 0 && gx < `gridW){
+            tx = (int)((float)x / sx);
+            if(tx >= sw) tx = sw - 1;
+            p = s~cpuPx[(index)(ty*sw + tx)];
+            if(p != 0x0){
+              ci = (int)s~colorPallet[(index)p];
+              `gridPx[(index)(gy*`gridW + gx)] = `quant(ci);
+            }
+          }
+          x++;
+        while x < dw:}
+      }
+      y++;
+    while y < dh:}
+  }
+  // Lay out the mosaic: cell.bg for occupied cells (or all with showemptyboxes),
+  // cell.random on randomselect cells. Faces are baked in later, a few per frame.
+  public void buildGrid(int cols, int rows, int offset, float stepX, float stepY, int k)
+  {
+    `gridCols = cols;
+    `gridRows = rows;
+    `gridOff = offset;
+    `gridStepX = stepX;
+    `gridStepY = stepY;
+    `gridK = k;
+    `gridW = (int)((float)cols * stepX * (float)k) + 1;
+    `gridH = (int)((float)rows * stepY * (float)k) + 1;
+    if(`gridW < 1) `gridW = 1;
+    if(`gridH < 1) `gridH = 1;
+    `gridPx.new((index)(`gridW * `gridH));
+    loop{int i = 0; while; do:
+      `gridPx[(index)i] = 0x0;
+      i++;
+    while i < `gridW * `gridH:}
+    if(#`gridPal == 0) `buildGridPal();
+    float fk = (float)k;
+    loop{
+      int j = 0;
+      int i;
+      index n;
+      bool occ, rnd;
+      float px, py;
+      while;
+    do:
+      loop{i = 0; while; do:
+        n = (index)(offset + j*cols + i);
+        occ = false;
+        rnd = false;
+        if(n >= 0 && n < #`charlist){
+          `charlist[n].baked = 0;
+          if(`charlist[n].empty == 0 && #`charlist[n].def > 0){
+            occ = true;
+            if(.s.equ(`charlist[n].def, "randomselect")) rnd = true;
+          }
+        }
+        px = (float)i * stepX * fk;
+        py = (float)j * stepY * fk;
+        if(occ || `showEmpty != 0){
+          `blitSprite(`tileBg, px, py, `tileBgSX * fk, `tileBgSY * fk);
+        }
+        if(rnd){
+          `blitSprite(`tileRnd, px + `gridPOX * fk, py + `gridPOY * fk, `tileRndSX * fk, `tileRndSY * fk);
+        }
+        i++;
+      while i < cols:}
+      j++;
+    while j < rows:}
+    `gridNext = 0;
+    `gridBaked = 0;
+    `gridBuiltVer = `gridTilesVer;
+    `gridDirty = true;
+  }
+  // Decode up to faceBudget portraits (9000,0), bake them into the mosaic
+  // and free their own textures. Visible cells only (c0..c1, r0..r1).
+  public void clearCell(int i, int j)
+  {
+    float fk = (float)`gridK;
+    int x0 = (int)((float)i * `gridStepX * fk);
+    int y0 = (int)((float)j * `gridStepY * fk);
+    int x1 = (int)((float)(i + 1) * `gridStepX * fk);
+    int y1 = (int)((float)(j + 1) * `gridStepY * fk);
+    if(x1 > `gridW) x1 = `gridW;
+    if(y1 > `gridH) y1 = `gridH;
+    if(x0 < 0) x0 = 0;
+    if(y0 < 0) y0 = 0;
+    if(x1 <= x0 || y1 <= y0) ret;
+    loop{int y = y0; int x; while; do:
+      loop{x = x0; while; do:
+        `gridPx[(index)(y*`gridW + x)] = 0x0;
+        x++;
+      while x < x1:}
+      y++;
+    while y < y1:}
+    `gridDirty = true;
+  }
+  public void bakeFaces(int c0, int r0, int c1, int r1, float faceSX, float faceSY)
+  {
+    if(c1 < c0 || r1 < r0) ret;
+    int vw = c1 - c0 + 1;
+    int total = vw * (r1 - r0 + 1);
+    int scanned = 0;
+    float fk = (float)`gridK;
+    loop{
+      int k;
+      int i, j;
+      index n;
+      bool stop = false;
+      while;
+    do:
+      k = `gridNext % total;
+      i = c0 + k % vw;
+      j = r0 + k / vw;
+      n = (index)(`gridOff + j*`gridCols + i);
+      if(n >= 0 && n < #`charlist){
+        if(`charlist[n].baked == 0){
+          branch{
+          cond `charlist[n].empty != 0 || #`charlist[n].def == 0
+            || .s.equ(`charlist[n].def, "randomselect"):
+            `charlist[n].baked = 2;
+          else:
+            if(`charlist[n].faceTried != 0) `unloadFace(n);
+            if(`faceBudget > 0){
+              .sff.keepCpuPixels = true;
+              `fillFace(n);
+              .sff.keepCpuPixels = false;
+            }
+            branch{
+            cond `charlist[n].faceTried == 0:
+              stop = true;
+            else:
+              if(#`charlist[n].facePortrait > 0){
+                `blitSprite(
+                  `charlist[n].facePortrait,
+                  ((float)i * `gridStepX + `gridPOX) * fk,
+                  ((float)j * `gridStepY + `gridPOY) * fk,
+                  faceSX * fk, faceSY * fk);
+                `gridDirty = true;
+                `gridBaked++;
+              }
+              // WinMUGEN: a character whose .def/.sff can't be read leaves an
+              // empty cell (-1): no cell.bg unless showemptyboxes = 1.
+              if(#`charlist[n].facePortrait == 0 && #`charlist[n].sprite == 0 && `showEmpty == 0){
+                `clearCell(i, j);
+              }
+              `charlist[n].baked = 1;
+              `unloadFace(n);
+            }
+          }
+        }
+      }
+      if(!stop) `gridNext++;
+      scanned++;
+    while scanned < 4096 && !stop:}
+  }
+  public void unloadFace(index n)
+  {
+    ^&.sff.Sprite nul;
+    if(n < 0) ret;
+    if(n >= #`charlist) ret;
+    `charlist[n].facePortrait = nul;
+    `charlist[n].faceTried = 0;
+  }
+  public void unloadBig(index n)
+  {
+    ^&.sff.Sprite nul;
+    if(n < 0) ret;
+    if(n >= #`charlist) ret;
+    // Nothing decoded for this cell - just clear the flag.
+    if(#`charlist[n].bigPortrait == 0){
+      `charlist[n].bigTried = 0;
+      ret;
+    }
+    if(#`bigLru == 0){
+      `bigLru.new(`bigLruCap);
+      loop{int i = 0; while; do:
+        `bigLru[(index)i] = -1;
+        i++;
+      while i < `bigLruCap:}
+    }
+    // Already cached - keep it loaded, don't free.
+    loop{int j = 0; while; do:
+      if(`bigLru[(index)j] == (int)n) ret;
+      j++;
+    while j < `bigLruCap:}
+    // Room left: append and keep n decoded.
+    if(`bigLruCount < `bigLruCap){
+      `bigLru[(index)((`bigLruHead + `bigLruCount) % `bigLruCap)] = (int)n;
+      `bigLruCount = `bigLruCount + 1;
+      ret;
+    }
+    // Cache full: evict the oldest, actually freeing its portrait, then store n.
+    int old = `bigLru[(index)`bigLruHead];
+    if(old >= 0 && old < #`charlist){
+      `charlist[(index)old].bigPortrait = nul;
+      `charlist[(index)old].bigTried = 0;
+    }
+    `bigLru[(index)`bigLruHead] = (int)n;
+    `bigLruHead = (`bigLruHead + 1) % `bigLruCap;
+    // n stays decoded: bigPortrait kept and bigTried left set, so the next
+    // fillBig(n) returns instantly instead of reading the SFF again.
+  }
+  // Free small portraits of cells that were visible last frame and are not now.
+  public void retireView(int cols, int offset, int c0, int r0, int c1, int r1)
+  {
+    bool same = c0 == `vc0 && r0 == `vr0 && c1 == `vc1 && r1 == `vr1
+      && cols == `vcols && offset == `voff;
+    if(same) ret;
+    if(`vc1 >= `vc0 && `vr1 >= `vr0){
+      loop{int j = `vr0; bool keep; while; do:
+        loop{int i = `vc0; while; do:
+          keep = cols == `vcols && offset == `voff
+            && i >= c0 && i <= c1 && j >= r0 && j <= r1;
+          if(!keep) `unloadFace((index)(`voff + j*`vcols + i));
+          i++;
+        while i <= `vc1:}
+        j++;
+      while j <= `vr1:}
+    }
+    `vc0 = c0;
+    `vr0 = r0;
+    `vc1 = c1;
+    `vr1 = r1;
+    `vcols = cols;
+    `voff = offset;
+  }
+  public index getCharNo(index i)
+  {
+    index n = i;
+    if(#`charlist > 0){
+      n %= #`charlist;
+      if(n < 0) n += #`charlist;
+    }
+    ret n;
+  }
+  public ^&Char getChar(index i)
+  {
+    index n = `getCharNo(i);
+    ret `charlist[n..n+1];
+  }
+  public index getStageNo(index i)
+  {
+    index n = i;
+    if(#`stagelist > 0){
+      n %= #`stagelist;
+      if(n < 0) n += #`stagelist;
+    }
+    ret n;
+  }
+  public ^&Stage getStage(index i)
+  {
+    index n = `getStageNo(i);
+    ret `stagelist[n..n+1];
+  }
+  public index setStageNo(index i)
+  {
+    `curStageNo = i;
+    `curStageNo %= #`stagelist + 1;
+    if(`curStageNo < 0) `curStageNo += #`stagelist + 1;
+    ret `curStageNo;
+  }
+  public void selectStage(index no)
+  {
+    `selectedStageNo = no;
+  }
+  public ^/char getStageName(index i)
+  {
+    index n = i;
+    n %= #`stagelist + 1;
+    if(n < 0) n += #`stagelist + 1;
+    if(n == 0) ret "RANDOM";
+    ret `stagelist[n-1].name;
+  }
+  public bool addChar(^/char def)
+  {
+    ^^/char defs;
+    ^/char d;
+    ^/char raw;
+    index delimiter;
+    defs =
+      .s.each!def.self?([void(def.self s=){s = .s.trim(s);}])<,
+      .s.split(",", def);
+    `charlist.new[-1];
+    `charlist[-1].empty = 0;
+    `charlist[-1].metaReady = 0;
+    `charlist[-1].faceTried = 0;
+    `charlist[-1].bigTried = 0;
+    if(#defs == 0){
+      `charlist[-1].def = "";
+      `charlist[-1].name = "";
+      `charlist[-1].empty = 1;
+      ret true;
+    }
+    raw = .s.toLower(defs[0]);
+    if(#raw == 0){
+      `charlist[-1].def = "";
+      `charlist[-1].name = "";
+      `charlist[-1].empty = 1;
+      ret true;
+    }
+    if(.s.equ("empty")<, raw){
+      `charlist[-1].def = "";
+      `charlist[-1].name = "";
+      `charlist[-1].empty = 1;
+      ret true;
+    }
+    if(.s.equ("blank")<, raw){
+      `charlist[-1].def = "";
+      `charlist[-1].name = "";
+      `charlist[-1].empty = 1;
+      ret true;
+    }
+    if(.s.equ("-")<, raw){
+      `charlist[-1].def = "";
+      `charlist[-1].name = "";
+      `charlist[-1].empty = 1;
+      ret true;
+    }
+    if(.s.equ("randomselect")<, raw){
+      `charlist[-1].def = "randomselect";
+      `charlist[-1].name = "Random";
+      ret true;
+    }
+    d = defs[0];
+    delimiter = .s.cFind("\/", d);
+    branch{
+    cond .s.equ(.s.toLower(d[#d-4 .. -1]), ".def"):
+      if(delimiter < 0) ret true;
+    cond delimiter < 0:
+      d = d + "/" + d + ".def";
+    else:
+      d = d + ".def";
+    }
+    if(delimiter < 0 || (delimiter > 0 &&.s.find(":", d[0 .. delimiter]) < 0)){
+      d = "chars/" + d;
+    }
+    `charlist[-1].def = d;
+    `charlist[-1].name = defs[0];
+    `charlist[-1].metaReady = 0;
+    `charlist[-1].faceTried = 0;
+    `charlist[-1].bigTried = 0;
+    ret true;
+  }
+  public void fillMeta(index n)
+  {:<-
+    public void info(&.com.Section sc=)
+    {
+      ^/char data;
+      branch{
+      cond #(data = sc.get("displayname")) > 0:
+        `charlist[`fillNo].name = data;
+      cond #(data = sc.get("name")) > 0:
+        if(#`charlist[`fillNo].name == 0) `charlist[`fillNo].name = data;
+      }
+    }
+    public void files(&.com.Section sc=, bool unicode)
+    {
+      ^/char data;
+      if(#(data = sc.get("sprite")) > 0){
+        `charlist[`fillNo].sprite = .com.readFileName(data, unicode);
+      }
+      if(#(data = sc.get("anim")) > 0){
+        `charlist[`fillNo].anim = .com.readFileName(data, unicode);
+      }
+    }
+    bool unicode = false;
+    bool infoflg = true, filesflg = true;
+    ~$void(^^/char, index=) section = [void(^^/char lines, index i=){
+      ^/char sec = lines[i];
+      ^/char secname = .com.sectionName(sec=);
+      if(#secname == 0) ret;
+      i++;
+      &.com.Section sc.parse(lines, i=);
+      branch{
+      cond .s.equ(secname, "info"):
+        if(infoflg) info(sc=);
+        infoflg = false;
+      cond .s.equ(secname, "files"):
+        if(filesflg) files(sc=, unicode);
+        filesflg = false;
+      }
+    }];
+    ^char mainbuf;
+    %^/char lines;
+    `fillNo = n;
+    if(#`charlist == 0) ret;
+    if(n >= #`charlist) ret;
+    if(`charlist[n].metaReady != 0) ret;
+    `charlist[n].metaReady = 1;
+    if(#`charlist[n].def == 0) ret;
+    if(.s.equ(`charlist[n].def, "randomselect")) ret;
+    if(#.com.loadText(`charlist[n].def, unicode=)=>mainbuf == 0) ret;
+    lines = .com.splitLines(mainbuf);
+    .s.each!^/char?([void(^/char l=){l=.s.trim(l);}], lines);
+    loop{index i = 0; while; do:
+      section(:lines, i=:);
+      i++;
+    while i < #lines:}
+  }
+  public void fillFace(index i)
+  {
+    index n;
+    ^/char error;
+    if(#`charlist == 0) ret;
+    if(i < 0) ret;
+    if(i >= #`charlist) ret;
+    n = i;
+    if(`charlist[n].empty != 0) ret;
+    `fillNo = n;
+    if(`charlist[n].faceTried != 0) ret;
+    if(`faceBudget <= 0) ret;
+    `faceBudget = `faceBudget - 1;
+    `fillMeta(n);
+    `charlist[n].faceTried = 1;
+    if(#`charlist[n].sprite == 0) ret;
+    if(.s.equ(`charlist[n].def, "randomselect")) ret;
+    .com.loadFile(`charlist[n].def, `charlist[n].sprite=)<,
+    [^/char(^/char f){
+      ^&.sff.Sprite s;
+      s.new(1);
+      s~wantCpu = .sff.keepCpuPixels;
+      if(#s~loadFromSff(f, `faceGroup, `faceIndex)=>error > 0) ret error;
+      `charlist[`fillNo].facePortrait = s;
+      ret "";
+    }];
+  }
+  public void fillBig(index i)
+  {
+    index n;
+    ^/char error;
+    if(#`charlist == 0) ret;
+    n = `getCharNo(i);
+    `fillNo = n;
+    if(`charlist[n].bigTried != 0) ret;
+    `charlist[n].bigTried = 1;
+    `fillMeta(n);
+    if(#`charlist[n].sprite == 0) ret;
+    if(.s.equ(`charlist[n].def, "randomselect")) ret;
+    .com.loadFile(`charlist[n].def, `charlist[n].sprite=)<,
+    [^/char(^/char f){
+      ^&.sff.Sprite s;
+      s.new(1);
+      if(#s~loadFromSff(f, `bigGroup, `bigIndex)=>error > 0) ret error;
+      `charlist[`fillNo].bigPortrait = s;
+      ret "";
+    }];
+  }
+  public ^/char addStage(^/char def)
+  {
+    ^/char d = .s.trim(def);
+    `stagelist.new[-1];
+    `stagelist[-1].def = d;
+    `stagelist[-1].name = d;
+    `stagelist[-1].metaReady = 0;
+    `stagelist[-1].faceTried = 0;
+    `stagelist[-1].bigTried = 0;
+    ret def;
+  }
+  public void fillStageMeta(index n)
+  {:<-
+    public void info(&.com.Section sc=)
+    {
+      ^/char data;
+      branch{
+      cond #(data = sc.get("displayname")) > 0:
+        `stagelist[`stageFillNo].name = data;
+      cond #(data = sc.get("name")) > 0:
+        if(#`stagelist[`stageFillNo].name == 0) `stagelist[`stageFillNo].name = data;
+      }
+    }
+    public void bgdef(&.com.Section sc=, bool unicode)
+    {
+      ^/char data;
+      if(#(data = sc.get("spr")) > 0){
+        `stagelist[`stageFillNo].sprite = .com.readFileName(data, unicode);
+      }
+    }
+    bool unicode = false;
+    bool infoflg = true, bgdefflg = true;
+    ~$void(^^/char, index=) section = [void(^^/char lines, index i=){
+      ^/char sec = lines[i];
+      ^/char secname = .com.sectionName(sec=);
+      if(#secname == 0) ret;
+      i++;
+      &.com.Section sc.parse(lines, i=);
+      branch{
+      cond .s.equ(secname, "info"):
+        if(infoflg) info(sc=);
+        infoflg = false;
+      cond .s.equ(secname, "bgdef"):
+        if(bgdefflg) bgdef(sc=, unicode);
+        bgdefflg = false;
+      }
+    }];
+    ^char mainbuf;
+    ^/char error;
+    %^/char lines;
+    `stageFillNo = n;
+    if(#`stagelist == 0) ret;
+    if(n >= #`stagelist) ret;
+    if(`stagelist[n].metaReady != 0) ret;
+    `stagelist[n].metaReady = 1;
+    if(#`stagelist[n].def == 0) ret;
+    if(
+      #.com.loadFile("stages/", `stagelist[n].def=)=>error <, [^/char(^/char f){
+        ret
+          #.file.loadAsciiText(f)=>mainbuf > 0
+          ? "" : .com.FileReadError;
+      }] > 0)
+    {
+      ret;
+    }
+    lines = .com.splitLines(mainbuf);
+    .s.each!^/char?([void(^/char l=){l=.s.trim(l);}], lines);
+    loop{index i = 0; while; do:
+      section(:lines, i=:);
+      i++;
+    while i < #lines:}
+  }
+  public void fillStageIcon(index i)
+  {
+    index n;
+    ^/char error;
+    if(#`stagelist == 0) ret;
+    n = `getStageNo(i);
+    `stageFillNo = n;
+    if(`stagelist[n].faceTried != 0) ret;
+    `stagelist[n].faceTried = 1;
+    `fillStageMeta(n);
+    if(#`stagelist[n].sprite == 0) ret;
+    .com.loadFile(`stagelist[n].def, `stagelist[n].sprite=)<,
+    [^/char(^/char f){
+      ^&.sff.Sprite s;
+      s.new(1);
+      if(#s~loadFromSff(f, `IconStageGroup, `IconStageIndex)=>error > 0) ret error;
+      `stagelist[`stageFillNo].iconStagePortrait = s;
+      ret "";
+    }];
+  }
+  public void fillStageBig(index i)
+  {
+    index n;
+    ^/char error;
+    if(#`stagelist == 0) ret;
+    n = `getStageNo(i);
+    `stageFillNo = n;
+    if(`stagelist[n].bigTried != 0) ret;
+    `stagelist[n].bigTried = 1;
+    `fillStageMeta(n);
+    if(#`stagelist[n].sprite == 0) ret;
+    .com.loadFile(`stagelist[n].def, `stagelist[n].sprite=)<,
+    [^/char(^/char f){
+      ^&.sff.Sprite s;
+      s.new(1);
+      if(#s~loadFromSff(f, `bigStageGroup, `bigStageIndex)=>error > 0) ret error;
+      `stagelist[`stageFillNo].bigStagePortrait = s;
+      ret "";
+    }];
+  }
+}
+
+
+&SelectInfo
+{
+  &Player
+  {
+    &Selected
+    {
+      public index i;
+      public int pal;
+    }
+    public %&Selected selchr;
+    public void reset()
+    {
+      `selchr.new(0);
+    }
+  }
+  public ^&Player p;
+  public &.Select sel;
+  new()
+  {
+    `p.new(2);
+  }
+  public bool addSelchr(int pn, int cn, int pl)
+  {
+    int n = `sel.getCharNo(cn);
+    if(#`sel.charlist[n].def == 0) ret false;
+    int p = pl;
+    loop{
+      int m = 0;
+      while;
+    do:
+      n = .m.rand(0, #`sel.charlist-1);
+      p = .m.rand(1, 12);
+      if(++m > 100000) ret false;
+    while
+      #`sel.charlist[n].def == 0
+      || .s.equ(`sel.charlist[n].def, "randomselect")
+      :
+    }
+    lock(`p){
+      `p[pn].selchr.new[-1];
+      `p[pn].selchr[-1].i = n;
+      `p[pn].selchr[-1].pal = p;
+    }
+    ret true;
+  }
+  public void reset()
+  {
+    `p[0].reset();
+    `p[1].reset();
+    `sel.selectedStageNo = -1;
+  }
+}
+
+public &System
+{
+  public ^&.fgt.Fight fig;
+  public &.SelectInfo selinf;
+  public void selReset()
+  {
+    `selinf.reset();
+  }
+}

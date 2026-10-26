@@ -1,0 +1,300 @@
+// IKEMEN:VOID Beta 3.0 | Mikazuki The Mugenite, Anonymous, scristopher, Unbyte (SL_Zero)
+// Community: https://mugen-cheap.fandom.com/wiki/MUGEN_Cheap_Community_Wikia
+//            https://mugen.doomjoshuaboy.com/categories/cheapie-guide/
+// See CREDITS.txt
+lib cfg = "../save/config.ssz";
+
+//Load "lib/" Scripts
+lib al = <alert.ssz>;
+lib m = <math.ssz>;
+lib sh = <shell.ssz>;
+lib s = <string.ssz>;
+
+//Load "lib/alpha/" Scripts
+lib lua = <alpha/lua.ssz>;
+
+//Load "script/ssz/" Scripts
+lib chr = "char.ssz";
+lib cmd = "command.ssz";
+lib com = "common.ssz";
+lib sc = "script.ssz";
+lib snd = "sound.ssz";
+lib sscri = "system-script.ssz";
+lib tscri = "trigger-script.ssz";
+
+
+public bool roundResetFlg = false, reloadFlg = false;
+
+void puts(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^/char text = .sc.strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(#.tscri.cwc > 0) .chr.appendClipboardText(.tscri.cwc~playerno, text + \n);
+}
+
+//Reload Engine (For use during Attract Mode)
+void sszReload(&.lua.State L=, int re=)
+{
+  re = 0;
+  .sh.open(.cfg.Executable, "", "", false, false);
+}
+
+void setLife(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int life = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+  if(#.tscri.cwc > 0){
+    .tscri.cwc~setLife(life);
+  }
+}
+
+void setLifeMax(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int lifemax = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+  if(#.tscri.cwc > 0){
+    .tscri.cwc~setLifeMax(lifemax);
+  }
+}
+
+void setPower(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int power = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+  if(#.tscri.cwc > 0){
+    .tscri.cwc~setPower(power);
+  }
+}
+
+void setAttack(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int attack = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+  if(#.tscri.cwc > 0){
+    .tscri.cwc~setAttack(attack);
+  }
+}
+
+void setDefence(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int defence = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+  if(#.tscri.cwc > 0){
+    .tscri.cwc~setDefence(defence);
+  }
+}
+
+void selfState(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int stateno = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+    .tscri.cwc~trSelfState(stateno, -1, 1);
+  }
+}
+
+void addHotkey(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 1;
+  ^/char key = .sc.strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  bool ctrl = .sc.blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  bool alt = .sc.blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  bool shift = .sc.blArg(L=, re=, argc=, nret); if(re < 0) ret;
+  ^/char script = .sc.strArg(L=, re=, argc=, nret); if(re < 0) ret;
+  L.pushBoolean(.com.addHotkey(key, ctrl, alt, shift, script));
+}
+
+void toggleClsnDraw(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0) .com.clsndraw!!;
+}
+
+void toggleDebugDraw(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0) .com.debugdraw!!;
+}
+
+void toggleStatusDraw(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0) .com.statusDraw!!;
+}
+
+void togglePostMatch(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0) .com.postMatchFlg!!;
+}
+
+void togglePause(&.lua.State L=, int re=)
+{
+  re = 0;
+  int tmp =
+    .chr.fight~ro.over_hittime + .chr.fight~ro.over_waittime
+    + (.chr.fight~ro.over_time - .chr.fight~ro.start_waittime);
+  if(#.cmd.net == 0 && .com.pauseMenu == 0 &&
+  !(.com.intro > .chr.fight~ro.ctrl_time+1 || (.chr.fight~ro.over_time >= .chr.fight~ro.start_waittime && .com.intro < -tmp))) .com.pause!!;
+}
+
+bool noHUDDisplay = false;
+
+void togglePauseMenu(&.lua.State L=, int re=)
+{
+  if(.tscri.cwc~roundState() == 2) { //Only allow pause during fight (not during intros or win)
+	  int argc = 0, nret = 0;
+	  int toggle = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+	  int tmp =
+		.chr.fight~ro.over_hittime + .chr.fight~ro.over_waittime
+		+ (.chr.fight~ro.over_time - .chr.fight~ro.start_waittime);
+	  if(#.cmd.net == 0 &&
+	  !(.com.intro > .chr.fight~ro.ctrl_time+1 || (.chr.fight~ro.over_time >= .chr.fight~ro.start_waittime && .com.intro < -tmp)) &&
+	  ((.com.pauseMenu == 0 && toggle > 0) || (.com.pauseMenu > 0 && toggle == 0))){
+		if(toggle > 0){
+		  .com.pause = false;
+		  .noHUDDisplay = .chr.gs(.chr.gsNOHUDDISPLAY);
+		}
+		.com.pauseMenu = toggle;
+		if(!.noHUDDisplay) .chr.specialFlag &= !.chr.gsNOHUDDISPLAY;
+	  }
+  }
+}
+
+void step(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0 && .com.pauseMenu == 0) .com.step = true;
+}
+
+void toggleRecord(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.sc.Snd snd = .sc.refArg!&.sc.Snd?(L=, re=, argc=, nret); if(re < 0) ret;
+  if(!.s.equ(.com.gameMode, "practice") || (.chr.chars[0]<>~stVal.no == 0 && !.chr.chars[0]<>~ctrl) || .com.pause || .com.pauseMenu > 0) ret;
+  branch{
+  cond .cmd.pbState == .cmd.PlaybackState::None:
+    .cmd.pbState = .cmd.PlaybackState::CtrlP2;
+  //cond .cmd.pbState == .cmd.PlaybackState::CtrlP2: //Waiting to Record with P2 Controlled by P1
+    .cmd.pbState = .cmd.PlaybackState::Record;
+  else:
+    .cmd.pbState = .cmd.PlaybackState::End;
+  }
+  snd~play(320, 2);
+}
+
+void togglePlayback(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.sc.Snd snd = .sc.refArg!&.sc.Snd?(L=, re=, argc=, nret); if(re < 0) ret; 
+  if(!.s.equ(.com.gameMode, "practice") || (.chr.chars[0]<>~stVal.no == 0 && !.chr.chars[0]<>~ctrl) || .com.pause || .com.pauseMenu > 0) ret;
+  .cmd.pbState = .cmd.pbState == .cmd.PlaybackState::None ? .cmd.PlaybackState::Play : .cmd.PlaybackState::End;
+  snd~play(320, 3);
+}
+
+void toggleRecordEnd(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  ^&.sc.Snd snd = .sc.refArg!&.sc.Snd?(L=, re=, argc=, nret); if(re < 0) ret;
+  .cmd.pbState = .cmd.PlaybackState::None;
+  .cmd.pbRec.new(0);
+  snd~play(320, 0);
+}
+
+void roundReset(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0 && #.cmd.replay == 0 && .com.pauseMenu == 0){
+    .com.pause = false;
+    .roundResetFlg = true;
+  }
+}
+
+void reload(&.lua.State L=, int re=)
+{
+  re = 0;
+  if(#.cmd.net == 0 && #.cmd.replay == 0) .reloadFlg = true;
+}
+
+void setAccel(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  double accel = .sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(#.cmd.net == 0 && #.cmd.replay == 0) .com.accel = accel;
+}
+
+void setAILevel(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int level = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  if(#.cmd.net == 0 && #.cmd.replay == 0 && #.tscri.cwc > 0){
+    int pn = .tscri.cwc~playerno;
+    if(!.m.inRange!int?(0, #.chr.chars-1, pn)) break;
+    .com.com[pn] = level;
+    .chr.chars[pn]:<-[void(c){c~key = level == 0 ?  pn : !pn;}];
+  }
+}
+
+void setTime(&.lua.State L=, int re=)
+{
+  int argc = 0, nret = 0;
+  int time = (int).sc.numArg(L=, re=, argc=, nret); if(re < 0) ret;
+  //if(#.cmd.net == 0 && #.cmd.replay == 0) .com.time = time;
+  .com.time = time;
+}
+
+void clear(&.lua.State L=, int re=)
+{
+  re = 0;
+  .com.clipboardText:<-[void(cb=){cb.new(0);}];
+}
+
+public &.lua.State L;
+
+public ^/char loadFile(^/char file)
+{
+  .sc.init(.L=);//Load all functions registered in script.ssz
+  .tscri.registerFunction(.L=); //Load all functions registered in trigger-script.ssz
+  .sscri.init(.L=); //Load all functions registered in system-script.ssz
+  .L.register("puts", .puts);
+  .L.register("setLife", .setLife);
+  .L.register("setLifeMax", .setLifeMax);
+  .L.register("setPower", .setPower);
+  .L.register("setAttack", .setAttack);
+  .L.register("setDefence", .setDefence);
+  .L.register("selfState", .selfState);
+  .L.register("addHotkey", .addHotkey);
+  .L.register("toggleClsnDraw", .toggleClsnDraw);
+  .L.register("toggleDebugDraw", .toggleDebugDraw);
+  .L.register("toggleStatusDraw", .toggleStatusDraw);
+  .L.register("togglePostMatch", .togglePostMatch);
+  .L.register("togglePause", .togglePause);
+  .L.register("togglePauseMenu", .togglePauseMenu);
+  .L.register("step", .step);
+  .L.register("toggleRecord", .toggleRecord);
+  .L.register("toggleRecordEnd", .toggleRecordEnd);
+  .L.register("togglePlayback", .togglePlayback);
+  .L.register("roundReset", .roundReset);
+  .L.register("reload", .reload);
+  .L.register("setAccel", .setAccel);
+  .L.register("setAILevel", .setAILevel);
+  .L.register("setTime", .setTime);
+  .L.register("clear", .clear);
+  .L.register("sszReload", .sszReload);
+  if(!.L.runFile(file)){
+    ^/char err = .L.toString(-1);
+    ret err;
+  }
+  ret "";
+}
+
+public ^/char runFile(^/char file)
+{
+  .L.runFile(file);
+  ret "";
+}

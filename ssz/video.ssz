@@ -1,0 +1,61 @@
+// IKEMEN:VOID Beta 3.0 | Mikazuki The Mugenite, Anonymous, scristopher, Unbyte (SL_Zero)
+// Community: https://mugen-cheap.fandom.com/wiki/MUGEN_Cheap_Community_Wikia
+//            https://mugen.doomjoshuaboy.com/categories/cheapie-guide/
+// See CREDITS.txt
+lib cfg = "../save/config.ssz";
+
+//Load "lib/" Scripts
+lib al = <alert.ssz>;
+lib consts = <consts.ssz>;
+lib file = <file.ssz>;
+lib m = <math.ssz>;
+lib s = <string.ssz>;
+lib tbl = <table.ssz>;
+
+//Load "lib/alpha/" Scripts
+lib sdl = <alpha/sdlplugin.ssz>;
+
+//Load "script/ssz/" Scripts
+lib com = "common.ssz";
+
+public void error<_t>(^/char m)
+{
+	.al.alert!_t?(m);
+}
+
+public bool videoActive = false;
+
+public &Video
+{
+	new()
+	{
+		`clear();
+	}
+	public void clear()
+	{
+	//Default Values
+		^/char file = "";
+		^/char capturepath = "";
+		int volume = 100;
+		int audiotrack = 1;
+		int subtitletrack = 0;
+	}
+	/^/char fileName;
+	public void play(^/char file, ^/char capturepath, int volume, int audiotrack)
+	{
+		^/char error;
+		&.file.File f;
+		f.open(file, "rb");
+		if(f.open(file, "rb"))
+		{
+			`fileName = file;
+			.videoActive = true;
+			int result = .sdl.playVideo(audiotrack, volume, capturepath, `fileName);
+			if (result == 0) //ALT+F4 or Close Window Event
+			{
+				//.sdl.End(::); //After end video, also close the engine
+			}
+		}
+	}
+}
+public ^&Video video.new(1);

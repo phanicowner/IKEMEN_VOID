@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://ikemen-void.neocities.org/">
-    <img src="ipiccy_image.jpg" width="500px" alt="IKEMEN:VOID Logo"/>
+    <img src="ipiccy_image.png" width="500px" alt="IKEMEN:VOID Logo"/>
   </a>
 </p>
 

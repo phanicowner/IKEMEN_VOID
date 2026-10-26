@@ -1,0 +1,9 @@
+data.tourneySize = 16
+data.tourneyType = "Single Elimination"
+data.tourneyTeam = 0
+data.tourneyCharSel = false
+data.tourneyStgSel = false
+data.tourneyRoundTime = 99
+data.tourneyRoundsNum = 2
+data.tourneyMatchsNum = 1
+data.tourney3rdPlace = false

@@ -1,0 +1,888 @@
+;----------------------------
+[Info]
+name = "Capcom vs. SNK 2"		;Name of motif
+author = "Elecbyte"       			;Motif author name
+localcoord = 640,480
+
+;----------------------------
+[Files]
+spr = system.sff          	;Filename of sprite data
+snd = system.snd          	;Filename of sound data
+logo.storyboard = logo.def ;Logo storyboard definition (optional)
+intro.storyboard =   ;Intro storyboard definition (optional)
+select = select.def       	;Character and stage selection list
+fight = fight.def         	;Fight definition filename
+font1 = font/CVS2-SXmenu.fnt
+font2 = font/namefnt.fnt
+font3 = font/msgothic-tt20.def
+font4 = font/f-6x9.def
+font5 = font/stagefnt.fnt
+
+;----------------------------
+[Music]
+title.bgm = data/cvs2/sound/title.mp3
+title.bgm.loop = 1
+select.bgm = data/cvs2/sound/select.mp3
+select.bgm.loop = 1
+vs.bgm = data/cvs2/sound/versus.mp3
+vs.bgm.loop = 0
+victory.bgm = data/cvs2/sound/victory.mp3
+victory.bgm.loop = 0
+
+;-------------------------------------------------------------------
+[Title Info]
+fadein.time = 20
+fadeout.time = 20
+menu.pos = 0,479
+menu.item.font = 1,0,-1
+menu.item.active.font = 1,0,1
+menu.item.spacing = 0,0
+menu.itemname.arcade = "A"             ;"ARCADE"
+menu.itemname.versus = "B"             ;"VS MODE"
+menu.itemname.teamarcade = "C"         ;"TEAM ARCADE"
+menu.itemname.teamversus = "D"         ;"TEAM VS"
+menu.itemname.teamcoop = "E"           ;"TEAM CO-OP"
+menu.itemname.survival = "F"           ;"SURVIVAL"
+menu.itemname.survivalcoop = "G"       ;"SURVIVAL CO-OP"
+menu.itemname.training = "H"           ;"TRAINING"
+menu.itemname.watch = "I"              ;"WATCH"
+menu.itemname.options = "J"            ;"OPTIONS"
+menu.itemname.exit = "K"               ;"EXIT"
+menu.window.margins.y = 480,480
+menu.window.visibleitems = 1
+menu.boxcursor.visible = 0
+cursor.move.snd = 100,0
+cursor.done.snd = 100,1
+cancel.snd = 100,2
+
+;----------------------------
+[TitleBGdef]
+bgclearcolor = 0,0,0
+
+[TitleBG 1]
+type  = anim
+actionno = 0
+start = -320,0
+layerno = 0
+
+[TitleBG 2]
+type  = normal
+spriteno = 2,0
+start = 0,0
+layerno = 0
+mask = 1
+
+[TitleBG 3]
+type  = normal
+spriteno = 1,0
+start = 0,0
+layerno = 0
+mask = 1
+
+[TitleBG 4]
+type  = normal
+spriteno = 3,1
+start = 0,0
+layerno = 0
+mask = 1
+trans = sub
+
+[TitleBG 5]
+type  = normal
+spriteno = 3,0
+start = 0,0
+layerno = 0
+mask = 1
+
+[Begin Action 0]
+0,0, 0,0, 8
+0,1, 0,0, 8
+0,2, 0,0, 8
+0,3, 0,0, 8
+
+;-------------------------------------------------------------------
+[Select Info]
+fadein.time = 20
+fadeout.time = 20
+rows = 7
+columns = 20
+wrapping = 1              			;1 to let cursor wrap around
+pos = 49,269              			;Position to draw to
+showemptyboxes = 0        			;1 to show empty boxes
+moveoveremptyboxes = 0    			;1 to allow cursor to move over empty boxes
+cell.size = 25,25         			;x,y size of each cell (in pixels)
+cell.spacing = 2          			;Space between each cell
+cell.bg.spr = 140,1		       		;Note: Don't use animation for cells
+cell.random.spr = 141,1   			;Icon for random select (don't use animation)
+cell.random.switchtime = 4			;Time to wait before changing to another random portrait
+p1.cursor.startcell = 0,0
+p1.cursor.active.anim = 150
+p1.cursor.done.anim = 151
+p1.cursor.move.snd = 100,0
+p1.cursor.done.snd = 100,1
+p1.random.move.snd = 100,0
+p2.cursor.startcell = 0,19
+p2.cursor.active.anim = 160
+p2.cursor.done.anim = 161
+p2.cursor.blink = 1       			;1 to blink p2's cursor if overlapping p1's
+p2.cursor.move.snd = 100,0
+p2.cursor.done.snd = 100,1
+p2.random.move.snd = 100,0
+random.move.snd.cancel = 0			;1 to have random move sound cancel itself when played repeatedly
+stage.move.snd = 100,0
+stage.done.snd = 100,1
+cancel.snd = 100,2
+portrait.offset = 0,0
+portrait.scale = 0.5,0.5
+title.font = -1       			;Font of title (-1 for none)
+;Big portraits
+p1.face.spr = 9000,1
+p1.face.offset = 31,30    			;Position to put big portrait
+p1.face.scale = 0.84,0.84
+p1.face.facing = 1
+p1.face.window = 0,0, 639,265
+p2.face.spr = 9000,1
+p2.face.offset = 608,30
+p2.face.scale = 0.84,0.84
+p2.face.facing = -1
+p2.face.window = 0,0, 639,265
+;Name
+p1.name.offset = 41,72   			;Position to put name
+p1.name.font = 2,0,1      			;Set to -1 for no display
+p1.name.spacing = 0,20
+p2.name.offset = 598,72
+p2.name.font = 2,0,-1
+p2.name.spacing = 0,20
+;Stage select
+stage.pos = 320,259
+stage.active.font = 5,0,0
+stage.active2.font = 5,0,0  			;Second font color for blinking
+stage.done.font = 5,0,0
+;Team menu
+teammenu.move.wrapping = 1
+p1.teammenu.pos = 132,113
+p1.teammenu.bg.anim = 170
+p1.teammenu.selftitle.font = 2,0,0
+p1.teammenu.selftitle.text = 1P Team Mode
+p1.teammenu.enemytitle.font = 2,0,0
+p1.teammenu.enemytitle.text = 1P Team Mode
+p1.teammenu.move.snd = 100,0
+p1.teammenu.value.snd = 100,0
+p1.teammenu.done.snd = 100,1
+p1.teammenu.item.offset = -83,40
+p1.teammenu.item.spacing = 0,24
+p1.teammenu.item.font = 2,0,1
+p1.teammenu.item.active.font = 2,0,1
+p1.teammenu.item.active2.font = 2,0,1 		;Second font color for blinking
+p1.teammenu.item.cursor.offset = -17,-15
+p1.teammenu.item.cursor.anim = 180
+p1.teammenu.value.icon.offset = 103,-18
+p1.teammenu.value.icon.spr = 181,0
+p1.teammenu.value.spacing = 12,0
+;p2 team
+p2.teammenu.pos = 508,113
+p2.teammenu.bg.anim = 170
+p2.teammenu.selftitle.font = 2,0,0
+p2.teammenu.selftitle.text = 2P Team Mode
+p2.teammenu.enemytitle.font = 2,0,0
+p2.teammenu.enemytitle.text = 2P Team Mode
+p2.teammenu.move.snd = 100,0
+p2.teammenu.value.snd = 100,0
+p2.teammenu.done.snd = 100,1
+p2.teammenu.item.offset = 83,40
+p2.teammenu.item.spacing = 0,24
+p2.teammenu.item.font = 2,0,-1
+p2.teammenu.item.active.font = 2,0,-1
+p2.teammenu.item.active2.font = 2,0,-1 	;Second font color for blinking
+p2.teammenu.item.cursor.offset = -183,-15
+p2.teammenu.item.cursor.anim = 190
+p2.teammenu.value.icon.offset = -115,-18
+p2.teammenu.value.icon.spr = 191,0
+p2.teammenu.value.spacing = -12,0
+
+[Begin Action 150]
+150,1, 0,0, 10
+150,1, 0,0, 4,,AS256D256
+150,1, 0,0, 4,,AS192D192
+150,1, 0,0, 4,,AS128D128
+150,1, 0,0, 4,,AS64D64
+-1,0, 0,0, 4
+150,1, 0,0, 4,,AS64D64
+150,1, 0,0, 4,,AS128D128
+150,1, 0,0, 4,,AS192D192
+150,1, 0,0, 4,,AS256D256
+
+[Begin Action 151]
+150,1, 0,0, -1
+
+[Begin Action 160]
+160,1, 0,0, 10
+160,1, 0,0, 4,,AS256D256
+160,1, 0,0, 4,,AS192D192
+160,1, 0,0, 4,,AS128D128
+160,1, 0,0, 4,,AS64D64
+-1,0, 0,0, 4
+160,1, 0,0, 4,,AS64D64
+160,1, 0,0, 4,,AS128D128
+160,1, 0,0, 4,,AS192D192
+160,1, 0,0, 4,,AS256D256
+
+[Begin Action 161]
+160,1, 0,0, -1
+
+[Begin Action 170]
+170,0, -106,-33, -1
+
+[Begin Action 180]
+180,0, 0,0, 6
+180,0, 0,0, 2,,AS256D256
+180,0, 0,0, 2,,AS192D192
+180,0, 0,0, 2,,AS128D128
+180,0, 0,0, 2,,AS64D64
+180,0, 0,0, 2,,AS128D128
+180,0, 0,0, 2,,AS192D192
+180,0, 0,0, 2,,AS256D256
+
+[Begin Action 190]
+190,0, 0,0, 6
+190,0, 0,0, 2,,AS256D256
+190,0, 0,0, 2,,AS192D192
+190,0, 0,0, 2,,AS128D128
+190,0, 0,0, 2,,AS64D64
+190,0, 0,0, 2,,AS128D128
+190,0, 0,0, 2,,AS192D192
+190,0, 0,0, 2,,AS256D256
+
+;-----------------------
+[SelectBGdef]
+
+[SelectBG 1]
+type  = anim
+actionno = 0
+start = -320,0
+layerno = 0
+
+[SelectBG 2]
+type  = normal
+spriteno = 100,0
+start = 0,265
+layerno = 0
+tile  = 0,195
+mask = 1
+
+[SelectBG 3]
+type  = normal
+spriteno = 101,0
+start = -300,20
+layerno = 1
+mask = 1
+
+[SelectBG 4]
+type  = normal
+spriteno = 101,1
+start = 78,20
+layerno = 1
+mask = 1
+
+[SelectBG 5]
+type  = normal
+spriteno = 111,0
+start = 0,0
+layerno = 1
+mask = 1
+
+[SelectBG 6]
+type = anim
+actionno = 110
+start = 14,34
+layerno = 1
+
+[SelectBG 7]
+type = anim
+actionno = 111
+start = -15,34
+layerno = 1
+
+[SelectBG 8]
+type = anim
+actionno = 112
+start = -44,34
+layerno = 1
+
+[Begin Action 110]
+110,9, 0,0, 3
+110,8, 0,0, 3
+110,7, 0,0, 3
+110,6, 0,0, 3
+110,5, 0,0, 3
+110,4, 0,0, 3
+110,3, 0,0, 3
+110,2, 0,0, 3
+110,1, 0,0, 3
+110,0, 0,0, 3
+
+[Begin Action 111]
+110,9, 0,0, 30
+110,8, 0,0, 30
+110,7, 0,0, 30
+110,6, 0,0, 30
+110,5, 0,0, 30
+110,4, 0,0, 30
+110,3, 0,0, 30
+110,2, 0,0, 30
+110,1, 0,0, 30
+110,0, 0,0, 30
+
+[Begin Action 112]
+110,9, 0,0, 300
+110,8, 0,0, 300
+110,7, 0,0, 300
+110,6, 0,0, 300
+110,5, 0,0, 300
+110,4, 0,0, 300
+110,3, 0,0, 300
+110,2, 0,0, 300
+110,1, 0,0, 300
+110,0, 0,0, 300
+
+;-------------------------------------------------------------------
+[VS Screen]
+time = 520                			;Time to show screen
+fadein.time = 20
+fadeout.time = 20
+;Big portraits
+p1.spr = 9000,1
+p1.offset = 46,175
+p1.facing = 1
+p1.scale = 0.62,0.62
+p2.spr = 9000,1
+p2.offset = 593,175
+p2.facing = -1
+p2.scale = 0.62,0.62
+;Names
+p1.name.font = -1
+p2.name.font = -1
+
+;-----------------------
+[VersusBGdef] 
+
+[VersusBG 1]
+type  = normal
+spriteno = 201,0
+start = -320,0
+layerno = 0
+tile  = 1,1
+
+[VersusBG 2]
+type  = anim
+actionno = 200
+start = 0,0
+layerno = 1
+
+[VersusBG 3]
+type  = anim
+actionno = 201
+start = -320,0
+layerno = 1
+
+[VersusBG 4]
+type  = normal
+spriteno = 202,0
+start = -320,0
+layerno = 1
+mask = 1
+
+[VersusBG 5]
+type  = anim
+actionno = 210
+start = 0,0
+layerno = 1
+
+[VersusBG 6]
+type  = anim
+actionno = 220
+start = 0,0
+layerno = 1
+
+[VersusBG 7]
+type  = anim
+actionno = 230
+start = 0,0
+layerno = 1
+
+[VersusBG 8]
+type  = anim
+actionno = 231
+start = 0,0
+layerno = 1
+
+[VersusBG 9]
+type  = anim
+actionno = 250
+start = -320,0
+layerno = 1
+
+[VersusBG 10]
+type  = anim
+actionno = 251
+start = -320,0
+layerno = 1
+
+[Begin Action 200]
+200,0, 0,0, 8
+200,1, 0,0, 8
+200,2, 0,0, 8
+200,3, 0,0, 8
+
+[Begin Action 201]
+0,0, 0,0, 8
+0,1, 0,0, 8
+0,2, 0,0, 8
+0,3, 0,0, 8
+0,0, 0,0, 8
+0,1, 0,0, 8
+0,2, 0,0, 8
+0,3, 0,0, 8
+0,0, 0,0, 8
+0,1, 0,0, 8
+0,2, 0,0, 8
+0,3, 0,0, 8
+0,0, 0,0, 8
+0,1, 0,0, 8
+0,2, 0,0, 8
+-1,0, 0,0, -1
+
+[Begin Action 210]
+-1,0, 0,0, 60
+210,0, 0,0, 2
+210,1, 0,0, 2
+210,2, 0,0, 2
+210,3, 0,0, 2
+210,4, 0,0, 2
+210,5, 0,0, 2
+210,6, 0,0, 2
+210,7, 0,0, 2
+210,8, 0,0, 2
+210,9, 0,0, 2
+210,10, 0,0, 2
+210,6, 0,0, 2
+210,7, 0,0, 2
+210,13, 0,0, 2
+210,14, 0,0, 2
+210,15, 0,0, 2
+210,16, 0,0, 2
+210,17, 0,0, 2
+210,18, 0,0, 2
+210,19, 0,0, 2
+210,20, 0,0, 2
+210,21, 0,0, 2
+210,22, 0,0, 2
+210,23, 0,0, 2
+210,24, 0,0, 2
+210,25, 0,0, 2
+210,19, 0,0, 8
+210,27, 0,0, -1
+
+[Begin Action 220]
+-1,0, 0,0, 120
+220,0, 0,0, 2
+220,1, 0,0, 2
+220,2, 0,0, 2
+220,3, 0,0, 2
+220,4, 0,0, 2
+220,5, 0,0, -1
+
+[Begin Action 230]
+-1,0, 0,0, 128
+230,0, 0,0, 2
+230,1, 0,0, 2
+230,2, 0,0, 2
+230,3, 0,0, 2
+230,4, 0,0, 2
+230,5, 0,0, 2
+230,6, 0,0, 2
+230,7, 0,0, -1
+
+[Begin Action 231]
+-1,0, 0,0, 142
+231,0, 0,0, 1,,A
+231,1, 0,0, 1,,A
+231,2, 0,0, 1,,A
+231,3, 0,0, 1,,A
+231,4, 0,0, 1,,A
+231,5, 0,0, 1,,A
+231,6, 0,0, 1,,A
+-1,0, 0,0, -1
+
+[Begin Action 250]
+250,0, 0,0, 10
+250,1, 0,0, 3
+250,2, 0,0, 3
+250,3, 0,0, 3
+250,4, 0,0, 3
+250,5, 0,0, 3
+250,6, 0,0, 3
+250,7, 0,0, 3
+250,8, 0,0, 3
+250,9, 0,0, 3
+250,10, 0,0, 3
+-1,0, 0,0, -1
+
+[Begin Action 251]
+-1,0, 0,0, 440
+250,11, 0,0, 3
+250,12, 0,0, 3
+250,13, 0,0, 3
+250,14, 0,0, 3
+250,15, 0,0, 3
+250,16, 0,0, 3
+250,17, 0,0, 3
+250,18, 0,0, 3
+250,19, 0,0, 3
+250,20, 0,0, 3
+250,21, 0,0, 3
+250,0, 0,0, -1
+
+;-------------------------------------------------------------------
+;Demo mode definition
+[Demo Mode]
+enabled = 1               ;Set to 1 to enable demo mode, 0 to disable
+select.enabled = 0        ;Set to 1 to display select screen, 0 to disable
+vsscreen.enabled = 0      ;Set to 1 to display versus screen, 0 to disable
+title.waittime = 1020      ;Time to wait at title before starting demo mode
+fight.endtime = 1500      ;Time to display the fight before returning to title
+fight.playbgm = 1         ;Set to 1 to enable in-fight BGM, 0 to disable
+fight.bars.display = 0    ;Set to 1 to display lifebar, 0 to disable
+intro.waitcycles = 0      ;Cycles to wait before intro cutscene is played again
+debuginfo = 0             ;Set to 0 to hide debugging info (debug mode only)
+
+;-------------------------------------------------------------------
+;Continue screen definition
+[Continue Screen]
+enabled = 1               ;Set to 1 to show continue screen, 0 to disable
+pos = 318,140
+
+;-------------------------------------------------------------------
+;Game over screen definition
+[Game Over Screen]
+enabled = 1              	;Set to 1 to show game over screen, 0 to disable
+storyboard = gameover.def             ;Game over storyboard filename
+
+;-------------------------------------------------------------------
+;Victory screen definition
+;This is the screen that is shown when you win a match in arcade mode.
+;It will not be displayed on the last match of arcade mode.
+[Victory Screen]
+enabled = 1
+time = 520                ;Time to show screen
+fadein.time = 20
+fadeout.time = 20
+p1.offset = 200,58
+p1.spr = 9000,1
+p1.facing = 1
+p1.scale = 1,1
+p1.window = 0,0, 639,338
+p1.layerno = 0
+p1.name.font = -1
+;Win quote text
+winquote.text = "No match for my special moves, huh? Better luck next time!" ;Default win quote text to show
+winquote.offset = 120,390
+winquote.font = 3,0,1,0,255,255
+winquote.window = 120,0, 520,480
+winquote.textwrap = w     ;Word wrap
+
+;-----------------------
+;Victory screen background
+[VictoryBGdef] 
+
+[VictoryBG 1]
+type  = normal
+spriteno = 201,0
+start = -320,0
+layerno = 0
+tile  = 1,1
+
+[VictoryBG 2]
+type  = anim
+actionno = 301
+start = -320,0
+layerno = 0
+
+[VictoryBG 3]
+type  = anim
+actionno = 313
+start = 0,0
+layerno = 0
+
+[VictoryBG 4]
+type  = normal
+spriteno = 310,0
+start = -150,0
+layerno = 0
+mask = 1
+tile  = 0,0
+velocity = 0.66,0
+trans = addalpha
+alpha = 256,64
+
+[VictoryBG 5]
+type  = normal
+spriteno = 302,0
+start = -320,0
+layerno = 0
+mask = 1
+
+[VictoryBG 6]
+type  = normal
+spriteno = 330,1
+start = -320,0
+layerno = 0
+mask = 1
+trans = addalpha
+alpha = 64,64
+
+[VictoryBG 7]
+type  = anim
+actionno = 300
+start = -320,0
+layerno = 1
+
+[VictoryBG 8]
+type  = normal
+spriteno = 330,0
+start = -320,0
+layerno = 1
+mask = 1
+
+[VictoryBG 9]
+type  = normal
+spriteno = 320,1
+start = -320,0
+layerno = 1
+mask = 1
+trans = addalpha
+alpha = 128,256
+
+[VictoryBG 10]
+type  = normal
+spriteno = 320,0
+start = -320,0
+layerno = 1
+mask = 1
+
+[VictoryBG 11]
+type  = anim
+actionno = 311
+start = 0,0
+layerno = 1
+
+[VictoryBG 12]
+type  = anim
+actionno = 314
+start = 0,0
+layerno = 1
+
+[VictoryBG 13]
+type  = anim
+actionno = 315
+start = 0,0
+layerno = 1
+
+[VictoryBG 14]
+type  = anim
+actionno = 312
+start = 0,0
+layerno = 1
+
+[VictoryBG 15]
+type  = normal
+spriteno = 320,2
+start = -320,0
+layerno = 1
+mask = 1
+
+[VictoryBG 16]
+type  = anim
+actionno = 350
+start = 0,0
+layerno = 1
+
+[VictoryBG 17]
+type  = anim
+actionno = 251
+start = -320,0
+layerno = 1
+
+[Begin Action 300]
+300,0, 0,0, 8
+300,1, 0,0, 8
+300,2, 0,0, 8
+300,3, 0,0, 8
+
+[Begin Action 301]
+301,0, 0,0, 8
+301,1, 0,0, 8
+301,2, 0,0, 8
+301,3, 0,0, 8
+
+[Begin Action 311]
+311,0, 0,0, 6,,AS128D256
+311,1, 0,0, 6,,AS128D256
+311,2, 0,0, 6,,AS128D256
+311,3, 0,0, 6,,AS128D256
+311,4, 0,0, 6,,AS128D256
+311,5, 0,0, 6,,AS128D256
+311,6, 0,0, 6,,AS128D256
+311,7, 0,0, 6,,AS128D256
+311,8, 0,0, 6,,AS128D256
+311,9, 0,0, 6,,AS128D256
+311,10, 0,0, 6,,AS128D256
+
+[Begin Action 312]
+312,0, 0,0, 8,,AS256D64
+312,1, 0,0, 8,,AS256D64
+312,2, 0,0, 8,,AS256D64
+312,3, 0,0, 8,,AS256D64
+312,4, 0,0, 8,,AS256D64
+312,5, 0,0, 8,,AS256D64
+312,6, 0,0, 8,,AS256D64
+312,7, 0,0, 8,,AS256D64
+312,8, 0,0, 8,,AS256D64
+
+[Begin Action 313]
+313,0, 0,0, 8,,AS256D64
+313,1, 0,0, 8,,AS256D64
+313,2, 0,0, 8,,AS256D64
+313,3, 0,0, 8,,AS256D64
+313,4, 0,0, 8,,AS256D64
+313,5, 0,0, 8,,AS256D64
+313,6, 0,0, 8,,AS256D64
+313,7, 0,0, 8,,AS256D64
+313,8, 0,0, 8,,AS256D64
+
+[Begin Action 314]
+314,0, 0,0, 6,,AS64D256
+314,1, 0,0, 6,,AS64D256
+314,2, 0,0, 6,,AS64D256
+314,3, 0,0, 6,,AS64D256
+314,4, 0,0, 6,,AS64D256
+314,5, 0,0, 6,,AS64D256
+
+[Begin Action 315]
+315,0, 0,0, 6,,AS32D256
+315,1, 0,0, 6,,AS32D256
+315,2, 0,0, 6,,AS32D256
+315,3, 0,0, 6,,AS32D256
+315,4, 0,0, 6,,AS32D256
+315,5, 0,0, 6,,AS32D256
+
+[Begin Action 350]
+350,43, 0,0, 10
+350,0, 0,0, 2
+350,1, 0,0, 2
+350,2, 0,0, 2
+350,3, 0,0, 2
+350,4, 0,0, 2
+350,5, 0,0, 2
+350,6, 0,0, 2
+350,7, 0,0, 2
+350,8, 0,0, 2
+350,9, 0,0, 2
+350,10, 0,0, 2
+350,11, 0,0, 2
+350,12, 0,0, 2
+350,13, 0,0, 2
+350,14, 0,0, 2
+350,15, 0,0, 2
+350,16, 0,0, 2
+350,17, 0,0, 2
+350,18, 0,0, 2
+350,19, 0,0, 2
+350,20, 0,0, 2
+350,21, 0,0, 2
+350,22, 0,0, 2
+350,23, 0,0, 2
+350,24, 0,0, 2
+350,25, 0,0, 2
+350,26, 0,0, 2
+350,27, 0,0, 2
+350,28, 0,0, 2
+350,29, 0,0, 2
+350,30, 0,0, 2
+350,31, 0,0, 2
+350,32, 0,0, 2
+350,33, 0,0, 2
+350,34, 0,0, 2
+350,35, 0,0, 2
+350,36, 0,0, 2
+350,37, 0,0, 2
+350,38, 0,0, 2
+350,39, 0,0, 2
+350,40, 0,0, 2
+350,41, 0,0, 2
+350,42, 0,0, 2
+-1,0, 0,0, -1
+
+;-------------------------------------------------------------------
+;Win screen definition
+;This is the screen that is shown when you win in arcade mode.
+;It will not be displayed if the winning character has an ending.
+[Win Screen]
+enabled = 0               ;Set to 1 to show win screen, 0 to disable
+wintext.text = Congratulations!
+wintext.font = 4,0,0
+wintext.offset = 318,140
+wintext.displaytime = -1
+wintext.layerno = 2
+fadein.time = 32
+pose.time = 300
+fadeout.time = 64
+
+;-------------------------------------------------------------------
+;Game ending screen definition
+;This screen shows up after the Win Screen.
+;It will not be displayed if the winning character has an ending.
+[Default Ending]
+enabled = 0               ;Set to 1 to show default ending, 0 to disable
+storyboard =              ;Default ending storyboard filename
+
+;-------------------------------------------------------------------
+;Ending credits screen definition
+;This screen shows up after the Win Screen and Ending
+[End Credits]
+enabled = 1               	;Set to 1 to show credits, 0 to disable
+storyboard = credits.def             ;Credits storyboard filename
+
+;-------------------------------------------------------------------
+;Survival mode results screen definition
+;This is the screen that is shown when you win in survival mode.
+;It will not be displayed if the winning character has an ending.
+;Whole group is *2001.11.14 NEW*
+[Survival Results Screen]
+enabled = 1
+winstext.text = Rounds Survived: %i  ;Use %i for win counter
+winstext.font = 4,0,0
+winstext.offset = 318,140
+winstext.displaytime = -1
+winstext.layerno = 2
+fadein.time = 32
+show.time = 300
+fadeout.time = 64
+roundstowin = 5           ;Number of rounds to get win pose (lose pose otherwise)
+
+;-------------------------------------------------------------------
+;Options screen definition
+[Option Info]
+cursor.move.snd = 100,0
+cursor.done.snd = 100,1
+cancel.snd = 100,2
+
+;-------------------
+;Options screen background
+[OptionBGdef] 
+
+[OptionBG 1]
+type  = anim
+actionno = 0
+start = -320,0
+layerno = 0

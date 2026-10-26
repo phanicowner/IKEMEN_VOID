@@ -1,0 +1,16 @@
+available data/system.def
+def data/mugen1/system.def
+localcoord 1280 720
+spr data/mugen1/system.sff
+snd data/system.snd
+select data/mugen1/../select.def
+fight data/mugen1/Lifebars/fight.def
+anims 12
+fight used
+selectDef set
+select slots 312 category pages 1
+cell.size 44,40 showemptyboxes 0
+force show disabled
+standard grid layout — engine selectCell kept
+motif localcoord 1280 720
+title menu from pack

@@ -128,16 +128,16 @@ The Monster API (`script/void_monster_api.lua`) scans character CNS/state files 
 ## 🛠️ What We Use & Anti-AI Policy
 
 - **The Core:** Powered by the C/C++ upstream architecture of **IKEMEN Plus Ultra** (by CableDorado2 and contributors).
-- **The VOID Layer (`script/`):** All custom features — including the Monster API, Monster Bridge, Universal Matrix Grid, Roster Cacher, and Python utility scripts (`force_clean_select.py`, `void-converter.py`) — were written entirely in-house using plain text editors and command-line tools.
+- **The VOID Layer (`script/`):** All custom features including the Monster API, Monster Bridge, Universal Matrix Grid, Roster Cacher, and Python utility scripts (`force_clean_select.py`, `void-converter.py`) were written entirely in-house using plain text editors and command-line tools.
 - **AI Policy:** No AI text generators, code assistants, or automated tools were used in the creation, structuring, or coding of this fork.
 
 ---
 
 ## 👥 Credits & Development Team
 
-- **Mikazuki The Mugenite** — Lead Developer / Creator (MUGEN author, cheapie enthusiast, co-owner of Mugen Database Cheapie Guide)
-- **Anonymous** — Developer (Engine and systems work)
-- **scristopher** — Collaborator / Ikemen Model & Sprite Artist (Custom models, sprites, and animations)
+- **Mikazuki The Mugenite**: Lead Developer / Creator (MUGEN author, cheapie enthusiast, co-owner of Mugen Database Cheapie Guide)
+- **Anonymous**: Developer (Engine and systems work)
+- **scristopher**: Collaborator / Ikemen Model & Sprite Artist (Custom models, sprites, and animations)
 
 Upstream engine authors include Suehiro, Alceris, K4thos, ShinLucho, NeatUnsou, Windblade, Dan, Kidcy, Wintermourn, Shiyo Kakuge, Kamekaze, two4teezee, TheFclass97, Rodknee, Ros, Yamori X, Jade Midori, PlasmoidThunder, Strong FS, CD2, and other IKEMEN contributors.
 
@@ -145,5 +145,6 @@ Upstream engine authors include Suehiro, Alceris, K4thos, ShinLucho, NeatUnsou, 
 
 ## License
 
-IKEMEN:VOID is released under the **IKEMEN PLUS ULTRA License** — free for personal, educational, and non-commercial use. Bundled community assets remain the property of their respective authors.
+IKEMEN:VOID is released under the **IKEMEN PLUS ULTRA License**
+free for personal, educational, and non-commercial use. Bundled community assets remain the property of their respective authors.
 ```

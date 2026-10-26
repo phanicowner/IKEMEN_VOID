@@ -129,7 +129,7 @@ The Monster API (`script/void_monster_api.lua`) scans character CNS/state files 
 
 - **The Core:** Powered by the C/C++ upstream architecture of **IKEMEN Plus Ultra** (by CableDorado2 and contributors).
 - **The VOID Layer (`script/`):** All custom features including the Monster API, Monster Bridge, Universal Matrix Grid, Roster Cacher, and Python utility scripts (`force_clean_select.py`, `void-converter.py`) were written entirely in-house using plain text editors and command-line tools.
-- **AI Policy:** No AI text generators, code assistants, or automated tools were used in the creation, structuring, or coding of this fork.
+- **AI Policy:** No AI text generators, code assistants, or automated tools were used in the creation, structuring, or coding of this fork. all information used to help with the fork of this engine is from the https://mugen-cheap.fandom.com/wiki/MUGEN_Cheap_Community_Wikia, https://mugen.doomjoshuaboy.com/resources/the-elecbyte-docs-backup.1883/, and much more!
 
 ---
 

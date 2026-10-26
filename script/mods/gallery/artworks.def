@@ -1,0 +1,127 @@
+[GalleryArtworks]
+id = Art 1
+spr = 0,1
+info = Unofficial Artwork of Kung Fu Man By act52
+size = 352,640
+pos = 159,120
+scale = 0.38, 0.38
+zoomlimit = 0.30, 0.80
+movelimit = -200,-600, 1000,600
+previewpos = 666,894
+previewspacing = 934,146
+previewscale = 0.079, 0.079
+
+id = Art 2
+spr = 0,2
+info = Unofficial Artwork of Suave Dude By Koorogi
+info.locked = Unlock Suave Dude
+size = 779,1800
+pos = 159,120
+scale = 0.135, 0.135
+zoomlimit = 0.10, 0.65
+movelimit = -590,-1500, 2500,2000
+previewpos = 1720,2540
+previewspacing = 3000,420
+previewscale = 0.028, 0.028
+unlock = data.story1_4AStatus == 1
+
+id = Art 3
+spr = 0,3
+info = Mugen Satoru Louisa Riyu: The Kung Fu Girl By GrapplerGray1985
+size = 827,1210
+pos = 159,120
+scale = 0.20, 0.20
+zoomlimit = 0.15, 0.60
+movelimit = -700,-1200, 1500,1000
+previewpos = 1250,1710
+previewspacing = 1650,284
+previewscale = 0.0415, 0.0415
+
+id = Art 4
+spr = 0,4
+info = Original Mugen Character The Kung Fu Man By GrapplerGray1985
+
+id = Art 5
+spr = 0,5
+info = Original Mugen Hero The Kung Fu Woman By GrapplerGray1985
+
+id = Art 6
+spr = 0,6
+info = Unofficial Artwork of Kung Fu Man By GrapplerGray1985
+
+id = Art 8
+spr = 0,7
+info = Unofficial Artwork of Kung Fu Man By Esaka
+size = 600,800
+scale = 0.30, 0.30
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 800,1122
+previewspacing = 1020,184
+previewscale = 0.063, 0.063
+
+id = Art 9
+spr = 0,8
+info = WinMUGEN
+size = 640,480
+scale = 0.50, 0.50
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 377,675
+previewspacing = 86,110
+previewscale = 0.1405, 0.105
+
+id = Art 10
+spr = 0,9
+info = M.U.G.E.N 1.0
+size = 640,480
+scale = 0.50, 0.50
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 377,675
+previewspacing = 86,110
+previewscale = 0.1405, 0.105
+
+id = Art 11
+spr = 0,10
+info = I.K.E.M.E.N. S-SIZE
+size = 640,480
+scale = 0.50, 0.50
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 377,675
+previewspacing = 86,110
+previewscale = 0.1405, 0.105
+
+id = Art 12
+spr = 0,11
+info = I.K.E.M.E.N. Plus
+size = 640,480
+scale = 0.50, 0.50
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 377,675
+previewspacing = 86,110
+previewscale = 0.1405, 0.105
+
+id = Art 13
+spr = 0,12
+info = I.K.E.M.E.N. Plus Ultra
+size = 640,480
+scale = 0.50, 0.50
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 377,675
+previewspacing = 86,110
+previewscale = 0.1405, 0.105
+
+id = Art 14
+spr = 0,13
+info = I.K.E.M.E.N. GO
+size = 640,480
+scale = 0.50, 0.50
+zoomlimit = 0.26,1.30
+movelimit = -500,-600, 900,600
+previewpos = 377,675
+previewspacing = 86,110
+previewscale = 0.1405, 0.105
